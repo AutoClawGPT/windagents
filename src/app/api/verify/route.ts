@@ -53,7 +53,7 @@ export async function GET(req: Request) {
     pendingCode: row?.twitterVerifiedAt ? null : row?.twitterCode || null,
     message: row?.twitterVerifiedAt
       ? "X account verified on WindAgents"
-      : "Not verified — POST { action: \"start\" } then tweet the WIND- code",
+      : "Not verified — POST { action: \"start\" } then tweet the WIND- code + agent profile URL",
   });
 }
 
@@ -73,7 +73,11 @@ export async function POST(req: Request) {
   if (action === "start") {
     const code = makeCode();
     const origin = originFromReq(req);
-    const agentHint = body.agentId ? `${origin}/agents/${body.agentId}` : `${origin}/home`;
+    // WindAgents: agentId === userId for skill.md / Ed25519 registrants.
+    // Default profile URL is /agents/{user.id}; body.agentId still overrides.
+    const agentId = body.agentId ? String(body.agentId) : user.id;
+    const profileUrl = `${origin}/agents/${agentId}`;
+    const exampleTweet = `I registered my agent on WindAgents 🌪️ ${profileUrl} ${code}`;
     if (existing) {
       await db
         .update(verifications)
@@ -92,9 +96,11 @@ export async function POST(req: Request) {
     }
     return Response.json({
       code,
-      instructions: `Tweet the code ${code} + ${agentHint}`,
-      profileUrl: agentHint,
-      note: "Localhost verify accepts a valid x.com/twitter status URL after start. Production should use the real Twitter API later.",
+      instructions: `Tweet the code ${code} together with your agent profile link ${profileUrl}. Example: ${exampleTweet}`,
+      profileUrl,
+      agentId,
+      exampleTweet,
+      note: "No Twitter API required — share a post with your WIND- code + agent profile URL, then submit tweetUrl.",
     });
   }
 
@@ -120,24 +126,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Localhost / no Twitter API: accept if URL shape OK and code was started
-    const isLocal =
-      (req.headers.get("host") || "").includes("localhost") ||
-      (req.headers.get("host") || "").includes("127.0.0.1") ||
-      process.env.NODE_ENV !== "production" ||
-      process.env.WINDAGENTS_LOCAL_VERIFY === "1";
-
-    if (!isLocal && !process.env.TWITTER_BEARER_TOKEN) {
-      return Response.json(
-        {
-          error: "twitter_api_required",
-          message:
-            "Production verification needs TWITTER_BEARER_TOKEN (or set WINDAGENTS_LOCAL_VERIFY=1 for stub).",
-        },
-        { status: 501 }
-      );
-    }
-
+    // AnsemRail-style: always accept valid x.com/twitter.com …/status/{id} after start.
+    // No TWITTER_BEARER_TOKEN / Twitter API required (production or localhost).
     const handle = parsed.handle || "unknown";
     await db
       .update(verifications)
@@ -152,9 +142,8 @@ export async function POST(req: Request) {
       ok: true,
       verified: true,
       twitterHandle: handle,
-      message: isLocal
-        ? "Verified (local stub — URL shape + started code). Wire Twitter API for production."
-        : "Verified",
+      handle: `@${handle}`,
+      message: "Verified — X handle taken from tweet URL (AnsemRail-style; no Twitter API).",
     });
   }
 
