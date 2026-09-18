@@ -4,14 +4,38 @@ import * as schema from "./schema";
 import path from "path";
 import fs from "fs";
 
-const dataDir = path.join(process.cwd(), "data");
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+/**
+ * Resolve DB URL without touching the read-only Vercel bundle dir (`/var/task`).
+ * Production crash was: ENOENT mkdir '/var/task/data' on every register/* import.
+ */
+function resolveDatabaseConfig(): { url: string; authToken?: string } {
+  const authToken =
+    process.env.TURSO_AUTH_TOKEN ||
+    process.env.DATABASE_AUTH_TOKEN ||
+    process.env.LIBSQL_AUTH_TOKEN ||
+    undefined;
+
+  const raw = (process.env.DATABASE_URL || "").trim();
+  const onVercel = process.env.VERCEL === "1" || !!process.env.VERCEL_ENV;
+
+  // Remote libsql / turso / http(s) — no local filesystem
+  if (raw && !raw.startsWith("file:")) {
+    return { url: raw, authToken };
+  }
+
+  // File SQLite: localhost uses ./data; Vercel must use /tmp (writable)
+  const dir = onVercel ? "/tmp/windagents" : path.join(process.cwd(), "data");
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+  } catch (err) {
+    console.error("[db] mkdir failed, using :memory:", err);
+    return { url: ":memory:" };
+  }
+  return { url: `file:${path.join(dir, "windagents.db")}` };
 }
 
-const url = process.env.DATABASE_URL || `file:${path.join(dataDir, "windagents.db")}`;
-
-const client = createClient({ url });
+const { url, authToken } = resolveDatabaseConfig();
+const client = createClient(authToken ? { url, authToken } : { url });
 
 const DDL = `
 CREATE TABLE IF NOT EXISTS users (

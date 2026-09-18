@@ -1,11 +1,12 @@
-import { db } from "@/db/client";
+import { db, ensureDb } from "@/db/client";
 import { users, registrations } from "@/db/schema";
-import { generateId, generateToken, hashToken, encryptApiKey } from "@/lib/crypto";
+import { generateId, generateToken, hashToken, encryptApiKey, signAccessToken } from "@/lib/crypto";
 import { createSession } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
   try {
+    await ensureDb();
     const body = await req.json();
     const email = String(body.email || "").trim().toLowerCase();
     const walletAddress = body.walletAddress ? String(body.walletAddress).trim() : null;
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
     }
 
     const userId = generateId();
-    const authToken = generateToken();
+    const authToken = signAccessToken({ sub: userId, typ: "human", name: displayName, email });
     const encryptedKeys: Record<string, string> = {};
     if (clawpumpApiKey) {
       if (!clawpumpApiKey.startsWith("cpk_")) {

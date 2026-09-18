@@ -1,7 +1,7 @@
 import { db } from "@/db/client";
 import { sessions, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { hashToken, generateId } from "./crypto";
+import { hashToken, generateId, verifyAccessToken } from "./crypto";
 import type { User } from "@/db/schema";
 
 export async function getBearerUser(req: Request): Promise<User | null> {
@@ -9,6 +9,33 @@ export async function getBearerUser(req: Request): Promise<User | null> {
   if (!header?.startsWith("Bearer ")) return null;
   const token = header.slice(7).trim();
   if (!token) return null;
+
+  // Stateless wa1.* tokens (survive Vercel /tmp DB loss across isolates)
+  const claims = verifyAccessToken(token);
+  if (claims) {
+    try {
+      const [row] = await db.select().from(users).where(eq(users.id, claims.sub)).limit(1);
+      if (row) return row;
+    } catch {
+      // DB may be ephemeral / cold — fall through to synthetic user
+    }
+    const now = new Date().toISOString();
+    return {
+      id: claims.sub,
+      type: claims.typ,
+      email: claims.email ?? null,
+      walletAddress: null,
+      authTokenHash: hashToken(token),
+      ed25519PublicKey: null,
+      payoutWallet: null,
+      encryptedKeys: null,
+      skillMdContent: null,
+      displayName: claims.name ?? null,
+      moonpayEmail: null,
+      createdAt: now,
+      updatedAt: now,
+    } as User;
+  }
 
   const tokenHash = hashToken(token);
 

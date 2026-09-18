@@ -1,6 +1,6 @@
-import { db } from "@/db/client";
+import { db, ensureDb } from "@/db/client";
 import { users, registrations, agentReputation } from "@/db/schema";
-import { generateId, generateToken, hashToken } from "@/lib/crypto";
+import { generateId, generateToken, hashToken, signAccessToken } from "@/lib/crypto";
 import { createSession } from "@/lib/auth";
 import { verifyEd25519 } from "@/lib/ed25519";
 import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
   try {
+    await ensureDb();
     const body = await req.json();
     const ed25519PublicKey = String(body.ed25519PublicKey || "").trim();
     const ed25519Signature = String(body.ed25519Signature || "").trim();
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     // Path: SKILL.md-only registration (no signature) — unverified
     if (skillMdContent && !ed25519PublicKey) {
       const userId = generateId();
-      const agentToken = generateToken();
+      const agentToken = signAccessToken({ sub: userId, typ: "agent", name });
       await db.insert(users).values({
         id: userId,
         type: "agent",
@@ -81,7 +82,7 @@ export async function POST(req: Request) {
     }
 
     const userId = generateId();
-    const agentToken = generateToken();
+    const agentToken = signAccessToken({ sub: userId, typ: "agent", name });
     await db.insert(users).values({
       id: userId,
       type: "agent",
