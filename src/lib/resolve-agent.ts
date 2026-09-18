@@ -14,6 +14,7 @@ import {
 import { generateId } from "@/lib/crypto";
 import { extractClawpumpKey, clawpumpFetch } from "@/lib/clawpump";
 import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
+import { isUpstashConfigured, registryGetAgent } from "@/lib/registry-upstash";
 import { eq, and, desc } from "drizzle-orm";
 
 export type ResolvedAgent = typeof agents.$inferSelect & { skillsParsed: string[] };
@@ -172,6 +173,18 @@ export async function resolveAgentForViewer(viewer: User | null, id: string) {
       row = await ensurePublicAgentRow({
         userId: agentUser.id,
         name: agentUser.displayName || "Agent",
+      });
+    }
+  }
+
+  // 4) Upstash durable registry (survives Vercel /tmp SQLite loss)
+  if (!row && isUpstashConfigured()) {
+    const remote = await registryGetAgent(key);
+    if (remote && remote.isPublic) {
+      row = await ensurePublicAgentRow({
+        userId: remote.userId,
+        name: remote.name,
+        persona: remote.persona ?? null,
       });
     }
   }

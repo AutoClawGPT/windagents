@@ -4,6 +4,7 @@ import * as schema from "./schema";
 import path from "path";
 import fs from "fs";
 
+import { isUpstashConfigured } from "@/lib/registry-upstash";
 /**
  * Resolve DB URL without touching the read-only Vercel bundle dir (`/var/task`).
  * Production crash was: ENOENT mkdir '/var/task/data' on every register/* import.
@@ -286,8 +287,16 @@ export function getDatabaseMode(): "libsql" | "file" | "memory" {
   return "libsql";
 }
 
+
+export function getDurableBackend(): "upstash" | "libsql" | "none" {
+  if (isUpstashConfigured()) return "upstash";
+  if (getDatabaseMode() === "libsql") return "libsql";
+  return "none";
+}
+
 export function isDurableDatabase(): boolean {
-  return getDatabaseMode() === "libsql";
+  // libsql/Turso OR Upstash Redis registry both count as durable on Vercel
+  return getDatabaseMode() === "libsql" || isUpstashConfigured();
 }
 
 /** On Vercel, refuse writes that would only live in /tmp. */
@@ -299,9 +308,9 @@ export function assertDurableDatabase(): Response | null {
     {
       error: "ephemeral_database",
       message:
-        "Production DATABASE_URL is still file/tmp SQLite. Agent/human rows will disappear across Vercel instances. Set DATABASE_URL=libsql://… and TURSO_AUTH_TOKEN in Vercel (claw-gpt/windagents), then redeploy. Free Turso DB is enough.",
+        "Production has no durable registry yet. File/tmp SQLite vanishes across Vercel isolates. Connect Upstash Redis: set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN on Vercel (claw-gpt/windagents), then redeploy. (Optional alternate: DATABASE_URL=libsql://… + TURSO_AUTH_TOKEN.)",
       mode: getDatabaseMode(),
-      need: ["DATABASE_URL (libsql://…)", "TURSO_AUTH_TOKEN"],
+      need: ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
     },
     { status: 503 }
   );

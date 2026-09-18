@@ -1,19 +1,29 @@
-import { getDatabaseMode, isDurableDatabase } from "@/db/client";
+import {
+  getDatabaseMode,
+  isDurableDatabase,
+  getDurableBackend,
+} from "@/db/client";
+import { isUpstashConfigured } from "@/lib/registry-upstash";
 
-/** Public DB durability probe — no secrets. */
+/** Public registry durability probe — no secrets. */
 export async function GET() {
   const mode = getDatabaseMode();
   const durable = isDurableDatabase();
+  const backend = getDurableBackend();
   const onVercel = process.env.VERCEL === "1" || !!process.env.VERCEL_ENV;
   return Response.json({
     ok: durable || !onVercel,
     mode,
     durable,
+    backend,
+    upstash: isUpstashConfigured(),
     onVercel,
     message: durable
-      ? "Remote libsql/Turso — registrations persist across instances."
+      ? backend === "upstash"
+        ? "Upstash Redis registry — skill.md registrations persist across instances."
+        : "Remote libsql — registrations persist across instances."
       : onVercel
-        ? "EPHEMERAL file/tmp SQLite on Vercel — set DATABASE_URL=libsql://… + TURSO_AUTH_TOKEN or profiles will vanish."
+        ? "No durable registry yet — set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN on Vercel (or libsql DATABASE_URL) or skill.md profiles will vanish."
         : "Local file SQLite is fine for localhost.",
   });
 }
