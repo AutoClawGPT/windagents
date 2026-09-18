@@ -1,0 +1,75 @@
+{
+  "at": "2026-09-13T22:54:46.544Z",
+  "steps": {
+    "register": {
+      "status": 200,
+      "verified": true,
+      "agentId": "9c62e33523ea7c248bc7bbc8ea2d0270"
+    },
+    "login": {
+      "status": 200,
+      "ok": true,
+      "sameToken": true,
+      "userId": "9c62e33523ea7c248bc7bbc8ea2d0270"
+    },
+    "settings": {
+      "status": 200,
+      "ok": true,
+      "hasClawpump": true,
+      "message": "Settings updated. Raw keys are encrypted at rest (AES-256-GCM) and never returned."
+    },
+    "settingsGet": {
+      "status": 200,
+      "hasClawpump": true,
+      "leakedKey": false
+    },
+    "createAgent": {
+      "status": 200,
+      "id": "f76d922a95742390b086933c815dd4b7",
+      "clawpumpAgentId": "6aeb7e43-a234-45da-b2d0-d16580899a2b",
+      "clawpumpConnected": true
+    },
+    "persona": {
+      "status": 200,
+      "ok": true,
+      "source": "clawpump-generate",
+      "preview": "You are Aeolus Scout II, a Solana meme-coin scout born in the WindAgents Aeolian Forge, where heat turns instinct into edge and velocity beats hesitation. You m"
+    },
+    "chat": {
+      "status": 200,
+      "ok": true,
+      "error": null,
+      "replyPreview": "Confirmed — I’m live on WindAgents with ClawPump."
+    },
+    "start": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "status": "running"
+      }
+    },
+    "stop": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "status": "stopped"
+      }
+    },
+    "jupiter": {
+      "status": 200,
+      "ok": true,
+      "outAmount": "9991900",
+      "error": null
+    },
+    "skillMd": {
+      "hasLiveKey": false,
+      "bytes": 30024
+    }
+  },
+  "agentUserId": "9c62e33523ea7c248bc7bbc8ea2d0270",
+  "agentTokenPreview": "3b48c2ca…",
+  "verified": true,
+  "createdAgentId": "f76d922a95742390b086933c815dd4b7",
+  "chatOk": true,
+  "chatError": null
+}

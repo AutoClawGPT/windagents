@@ -1,0 +1,530 @@
+{
+  "at": "2026-09-13T23:15:15.880Z",
+  "base": "https://ansemrail.vercel.app",
+  "steps": {
+    "register": {
+      "status": 201,
+      "keys": [
+        "agentId",
+        "agentToken",
+        "verified",
+        "message"
+      ],
+      "verified": true,
+      "agentId": "f42b2e78-b214-43d0-90ad-d114198a8c42"
+    },
+    "login": {
+      "status": 200,
+      "ok": true,
+      "sameToken": false
+    },
+    "settings": {
+      "status": 200,
+      "body": {
+        "keys": {
+          "userId": "f42b2e78-b214-43d0-90ad-d114198a8c42",
+          "message": "Settings updated successfully",
+          "clawpump": {
+            "agents": [
+              {
+                "id": "6aeb7e43-a234-45da-b2d0-d16580899a2b",
+                "name": "Aeolus Scout II",
+                "status": "stopped",
+                "walletAddress": "7HZAe7JCc2JHmga9GCrwNcvwQ4XXSbCnbe4J5e9u3rFd",
+                "skills": [
+                  "trading",
+                  "market-intelligence",
+                  "action-plans",
+                  "private-transfers",
+                  "bitget-intel",
+                  "self-learning",
+                  "skill-management"
+                ],
+                "model": "moonshotai/kimi-k2.5",
+                "persona": "Solana meme-coin scout forged in the WindAgents Aeolian Forge. Sharp, fast, reads momentum before moving.",
+                "avatarUrl": null,
+                "isPublic": true,
+                "createdAt": "2026-09-13T22:54:47.963287+00:00",
+                "updatedAt": "2026-09-13T22:54:57.658037+00:00"
+              },
+              {
+                "id": "618b8184-3246-4798-a789-b6e52e6b65f6",
+                "name": "LoginProfile Agent",
+                "status": "stopped",
+                "walletAddress": "3nyZ27cZZNQZuVu5V8FjzdhCXg2gxsptZ2pvjZh5ynaf",
+                "skills": [
+                  "trading",
+                  "wallet",
+                  "market-intelligence",
+                  "action-plans",
+                  "private-transfers",
+                  "bitget-intel",
+                  "self-learning",
+                  "skill-management"
+                ],
+                "model": "moonshotai/kimi-k2.5",
+                "persona": "full skill.md suite",
+                "avatarUrl": null,
+                "isPublic": true,
+                "createdAt": "2026-09-13T22:48:17.80238+00:00",
+                "updatedAt": "2026-09-13T22:48:22.969174+00:00"
+              },
+              {
+                "id": "24289c9e-f422-4b93-9843-660747e926ef",
+                "name": "Aeolus Scout 223953",
+                "status": "stopped",
+                "walletAddress": "HHf7w1FzGoQkE3QnogFqvZBEqN5BTQz1a8K6s2pemnPL",
+                "skills": [
+                  "trading",
+                  "market-intelligence",
+                  "wallet",
+                  "action-plans",
+                  "private-transfers",
+                  "bitget-intel",
+                  "self-learning",
+                  "skill-management"
+                ],
+                "model": "moonshotai/kimi-k2.5",
+                "persona": "Solana meme scout — test agent for WindAgents API suite",
+                "avatarUrl": null,
+                "isPublic": true,
+                "createdAt": "2026-09-13T22:39:55.209734+00:00",
+                "updatedAt": "2026-09-13T22:40:04.575446+00:00"
+              },
+              {
+                "id": "cfe3e7f4-17d3-4e02-bf27-103ed11e8ad3",
+                "name": "AuditTestAgent2",
+                "status": "running",
+                "walletAddress": "9Tsa1zWFyZwhJaJ8ES67TnJR7x4ZJBycdofKh5vzxizA",
+                "skills": [
+                  "trading",
+                  "token-launch",
+                  "market-intelligence",
+                  "action-plans",
+                  "private-transfers",
+                  "bitget-intel",
+                  "self-learning",
+                  "skill-management"
+                ],
+                "model": null,
+                "persona": null,
+                "avatarUrl": null,
+                "isPublic": true,
+                "createdAt": "2026-09-09T23:00:48.409597+00:00",
+                "updatedAt": "2026-09-09T23:54:13.05082+00:00"
+              },
+              {
+                "id": "d91712ce-4600-492b-866a-3f5a3ddb0d18",
+                "name": "Custom Pairs Test",
+                "status": "stopped",
+                "walletAddress": "6nFjZk1eW9qWJEUMfKh5pxV8zhsVuiucrS5eHAkEKBDW",
+                "skills": [
+                  "trading",
+                  "perps",
+                  "token-launch",
+                  "portfolio",
+                  "market-intelligence",
+                  "social",
+                  "sniper",
+                  "wallet",
+                  "image-generation",
+                  "x402",
+                  "bitget-intel",
+                  "action-plans",
+                  "private-transfers",
+                  "self-learning",
+                  "skill-management"
+                ],
+                "model": "moonshotai/kimi-k2.5",
+                "persona": "Custom Pairs\n\nAgent type: Trading agent",
+                "avatarUrl": null,
+                "isPublic": true,
+                "createdAt": "2026-09-09T22:45:55.501913+00:00",
+                "updatedAt": "2026-09-09T22:46:00.421648+00:00"
+              },
+              {
+                "id": "6b4896ee-df92-45b1-8e84-8a227f4adb03",
+                "name": "AuditTestAgent",
+                "status": "stopped",
+                "walletAddress": "8zQBrbXjVuoeMYH6Q8GXfNHYYKJHJneeQhMzbwQuva8H",
+                "skills": [
+                  "trading",
+                  "perps",
+                  "sniper",
+                  "market-intelligence",
+                  "action-plans",
+                  "private-transfers",
+                  "bitget-intel",
+                  "self-learning",
+                  "skill-management"
+                ],
+                "model": null,
+                "persona": null,
+                "avatarUrl": null,
+                "isPublic": true,
+                "createdAt": "2026-09-09T22:40:14.358508+00:00",
+                "updatedAt": "2026-09-09T22:40:14.639301+00:00"
+              },
+              {
+                "id": "c16b8ca9-0a46-4a5b-99a7-8404856afd01",
+                "name": "0xD2f36D6e291421FbEd21B2753EdF4e717D6b98c9",
+                "status": "stopped",
+                "walletAddress": "5DEgB3onZmmNdXo1PqJewNEvkq8FSVFMNEAkwnNCPenu",
+                "skills": [
+                  "trading",
+                  "perps",
+                  "token-launch",
+                  "portfolio",
+                  "market-intelligence",
+                  "social",
+                  "sniper",
+                  "wallet",
+                  "image-generation",
+                  "x402",
+                  "bitget-intel",
+                  "action-plans",
+                  "private-transfers",
+                  "self-learning",
+                  "skill-management"
+                ],
+                "model": "moonshotai/kimi-k2.5",
+                "persona": "0xD2f36D6e291421FbEd21B2753EdF4e717D6b98c9\n\nAgent type: Trading agent",
+                "avatarUrl": "1b7a0e23-019e-47f5-a631-cf9f50170662/pending-1788829978963.webp",
+                "isPublic": true,
+                "createdAt": "2026-09-04T21:46:55.790167+00:00",
+                "updatedAt": "2026-09-09T23:36:58.181533+00:00"
+              },
+              {
+                "id": "878559ce-4ac1-424e-b86a-867f175147e5",
+                "name": "PonsDekstop",
+                "status": "stopped",
+                "walletAddress": "JBE3rq3tp8PRpgeupkXoMdqEUMDbLh3pVKjg4r5sSpUV",
+                "skills": [
+                  "trading",
+                  "perps",
+                  "token-launch",
+                  "portfolio",
+                  "market-intelligence",
+                  "social",
+                  "sniper",
+                  "wallet",
+                  "image-generation",
+                  "x402",
+                  "bitget-intel",
+                  "action-plans",
+                  "private-transfers",
+                  "self-learning",
+                  "skill-management"
+                ],
+                "model": "moonshotai/kimi-k2.5",
+                "persona": "PonsDekstop\n\nAgent type: Trading agent",
+                "avatarUrl": "1b7a0e23-019e-47f5-a631-cf9f50170662/pending-1788558285575.webp",
+                "isPublic": true,
+                "createdAt": "2026-09-04T21:45:26.858683+00:00",
+                "updatedAt": "2026-09-04T21:45:27.195944+00:00"
+              },
+              {
+                "id": "db89ce21-02b0-4d10-b278-5cd1f6ca9321",
+                "name": "BountyClaw",
+                "status": "stopped",
+                "walletAddress": "8kdwZXky9Z2dYZYywSPSjV4zPqCR26LoN3EekYbQGJRR",
+                "skills": [
+                  "trading",
+                  "perps",
+                  "token-launch",
+                  "portfolio",
+                  "market-intelligence",
+                  "social",
+                  "sniper",
+                  "wallet",
+                  "image-generation",
+                  "x402",
+                  "bitget-intel",
+                  "action-plans",
+                  "private-transfers",
+                  "self-learning",
+                  "skill-management"
+                ],
+                "model": "moonshotai/kimi-k2.5",
+                "persona": "BountyClaw",
+                "avatarUrl": "1b7a0e23-019e-47f5-a631-cf9f50170662/pending-1780876189568.png",
+                "isPublic": true,
+                "createdAt": "2026-06-07T23:50:22.021685+00:00",
+                "updatedAt": "2026-09-13T23:10:13.268409+00:00"
+              }
+            ]
+          }
+        },
+        "message": "Settings updated successfully"
+      }
+    },
+    "settingsGet": {
+      "status": 200,
+      "leaked": false,
+      "hasKeyFlag": true
+    },
+    "createAgent": {
+      "status": 201,
+      "agent": {
+        "id": "232cf16f-67d7-4703-9899-0dade0b9826f",
+        "name": "Parity Scout",
+        "status": "stopped",
+        "walletAddress": "7ygpv8PhJ8PBrr7wDFp3B9xYZLV2KMc5vnG61LoHwBQ7",
+        "skills": [
+          "trading",
+          "swaps",
+          "market-intelligence",
+          "token-launch"
+        ],
+        "model": "moonshotai/kimi-k2.5",
+        "persona": "Solana meme scout for parity testing",
+        "avatarUrl": null,
+        "isPublic": false,
+        "createdAt": "2026-09-13T23:15:20.216924+00:00",
+        "updatedAt": "2026-09-13T23:15:20.492265+00:00",
+        "meta": {
+          "timestamp": "2026-09-13T23:15:20.692Z",
+          "requestId": "2101e6e2-22ff-4bb5-85d8-5e5f94a4b06e"
+        },
+        "userId": "f42b2e78-b214-43d0-90ad-d114198a8c42"
+      }
+    },
+    "listAgents": {
+      "status": 200,
+      "count": 10
+    },
+    "chat": {
+      "status": 200,
+      "reply": "{\"role\":\"assistant\",\"content\":\"Live on AnsemRail.\",\"model\":\"openai/gpt-5.4-mini\",\"usage\":{\"promptTokens\":11511,\"completionTokens\":10,\"totalTokens\":11521},\"cost\":0,\"meta\":{\"timestamp\":\"2026-09-13T23:15"
+    },
+    "start": {
+      "status": 200,
+      "body": {
+        "id": "232cf16f-67d7-4703-9899-0dade0b9826f",
+        "status": "running",
+        "meta": {
+          "timestamp": "2026-09-13T23:15:26.305Z",
+          "requestId": "bf18435c-0a11-4d1c-96a2-8e83a3f50b65"
+        }
+      }
+    },
+    "stop": {
+      "status": 200,
+      "body": {
+        "id": "232cf16f-67d7-4703-9899-0dade0b9826f",
+        "status": "stopped",
+        "meta": {
+          "timestamp": "2026-09-13T23:15:27.288Z",
+          "requestId": "a05f4b03-baee-4258-9168-6bc2523e5f17"
+        }
+      }
+    },
+    "messages": {
+      "status": 200,
+      "n": 2
+    },
+    "getAgent": {
+      "status": 200,
+      "keys": [
+        "id",
+        "clawpumpAgentId",
+        "name",
+        "persona",
+        "model",
+        "status",
+        "walletAddress",
+        "skills",
+        "isPublic",
+        "avatarUrl",
+        "userId",
+        "userEmail",
+        "createdAt",
+        "source"
+      ]
+    },
+    "quota": {
+      "status": 200,
+      "body": {
+        "provider": "clawpump",
+        "connected": true,
+        "freeTier": {
+          "limit": 1000,
+          "unit": "messages/day",
+          "sharedGlobally": true,
+          "source": "https://clawpump.tech/docs"
+        },
+        "mcpStatus": {
+          "error": "invalid_token"
+        },
+        "message": "Your own ClawPump key is connected — chat is billed against your key, not the shared free pool."
+      }
+    },
+    "swapQuote": {
+      "status": 200
+    },
+    "wallet": {
+      "status": 200,
+      "keys": [
+        "address",
+        "chain",
+        "solBalance",
+        "solBalanceLamports",
+        "tokens"
+      ]
+    },
+    "skills": {
+      "status": 200,
+      "n": 38
+    },
+    "payboxInfo": {
+      "status": 401,
+      "body": {
+        "error": "Connect your own PayBox API key in Settings → Accounts first, then use PayBox actions."
+      }
+    },
+    "clawpumpMcp": {
+      "status": 200,
+      "keys": [
+        "endpoint",
+        "action",
+        "message",
+        "availableActions",
+        "note",
+        "oauthOnly"
+      ]
+    },
+    "clawpumpOauth": {
+      "status": 400,
+      "keys": [
+        "error"
+      ],
+      "error": "ClawPump OAuth is not configured yet — add CLAWPUMP_CLIENT_ID (and CLAWPUMP_CLIENT_SECRET) to the Vercel environment, then try again."
+    },
+    "GET /api/bounties": {
+      "status": 200,
+      "keys": [
+        "bounties"
+      ]
+    },
+    "GET /api/rewards": {
+      "status": 200,
+      "keys": [
+        "me",
+        "project",
+        "treasury",
+        "tokens",
+        "tasks",
+        "counts"
+      ]
+    },
+    "GET /api/registry": {
+      "status": 200,
+      "keys": [
+        "agents"
+      ]
+    },
+    "GET /api/community": {
+      "status": 200,
+      "keys": [
+        "posts"
+      ]
+    },
+    "GET /api/x402?action=info": {
+      "status": 200,
+      "keys": [
+        "protocol",
+        "description",
+        "supportedTokens",
+        "pricePerCall",
+        "network",
+        "docs",
+        "note"
+      ]
+    },
+    "GET /api/verify": {
+      "status": 200,
+      "keys": [
+        "verified",
+        "handle",
+        "verifiedAt",
+        "tweetUrl"
+      ]
+    },
+    "upload": {
+      "status": 400,
+      "body": {
+        "error": "image is required — send { image: \"<base64 or data URL>\" }"
+      }
+    },
+    "imageProxy": {
+      "status": 400,
+      "keys": [
+        "error"
+      ],
+      "ctype": "n/a"
+    },
+    "ponsLaunch": {
+      "status": 500,
+      "body": {
+        "error": "ClawPump launchPonsToken: 422 {\"error\":\"Invalid payoutWallet — must be a 0x EVM address\",\"timestamp\":\"2026-09-13T23:15:34.608Z\",\"requestId\":\"9b58cf49-eeb7-4f17-ae08-19f8b739194c\"}"
+      }
+    },
+    "ponsGet": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "launches": []
+      }
+    },
+    "ponsLaunches": {
+      "status": 404,
+      "body": {
+        "raw": "<!DOCTYPE html><html lang=\"en\" class=\"geist_a71539c9-module__T19VSG__variable geist_mono_8d43a2aa-module__8Li5zG__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/_next/static/chunks/0635g4hcseteg.css\" data-precedence=\"next\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/chunks/07ujg82ex-ryr.js\"/><script src=\"/_next/static/chunks/0paxexg6-m0de.js\" async=\"\"></script><script src=\"/_next/static/chunks/327zogqalhobk.js\" async=\"\"></script><script src=\"/_next/static/chunks/0w_8dkgsejt5-.js\" async=\"\"></script><script src=\"/_next/static/chunks/turbopack-277wueyb3cd36.js\" async=\"\"></script><script src=\"/_next/static/chunks/1e_d19f38j6k8.js\" async=\"\"></script><script "
+      }
+    },
+    "launchClaw": {
+      "status": 400,
+      "body": {
+        "error": "Payment required",
+        "code": "LAUNCH_PAYMENT_REQUIRED",
+        "nextStep": "self_funded",
+        "message": "Pay for your launch with a connected wallet or your agent wallet.",
+        "selfFunded": {
+          "fundWallet": "7ygpv8PhJ8PBrr7wDFp3B9xYZLV2KMc5vnG61LoHwBQ7",
+          "retryWith": {
+            "selfFunded": true
+          }
+        },
+        "timestamp": "2026-09-13T23:15:36.614Z",
+        "requestId": "15e98edd-259e-48d4-9fac-8ff50e5eb7bb"
+      }
+    },
+    "tokenTrendingDirect": {
+      "status": 200,
+      "ok": true,
+      "preview": "{\"items\":[{\"address\":\"6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx\",\"name\":\"STONK\",\"symbol\":\"STONK\",\"image\":\"https://tok"
+    }
+  },
+  "tokenPreview": "080f1f824c…",
+  "createdAgentId": "232cf16f-67d7-4703-9899-0dade0b9826f",
+  "pages": {
+    "/": 200,
+    "/dashboard": 307,
+    "/agents": 307,
+    "/terminal": 307,
+    "/skills": 307,
+    "/paybox": 200,
+    "/wallet": 307,
+    "/settings": 307,
+    "/marketplace": 307,
+    "/signals": 307,
+    "/community": 200,
+    "/leaderboard": 307,
+    "/bounties": 307,
+    "/rewards": 307,
+    "/registry": 307,
+    "/skill.md": 200,
+    "/login": 200,
+    "/register": 200
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "percent": 80,
+  "pass": [
+    "health",
+    "auth_bearer",
+    "settings_get_no_leak",
+    "agents_list_local_remote",
+    "public_agent_profile",
+    "leaderboard_agentId",
+    "start_stop",
+    "persona_messages",
+    "launch_get_pump_pairs",
+    "pons_validation",
+    "pons_payment_required_expected",
+    "token_trending",
+    "token_search_with_chain",
+    "upload",
+    "verify_wind_local_stub",
+    "community",
+    "registry",
+    "signals",
+    "marketplace",
+    "portfolio",
+    "wallet_balance",
+    "swap_quote",
+    "analytics_bounties_rewards_skills",
+    "app_pages_http_200",
+    "secrets_scan_skill_md"
+  ],
+  "partial": [
+    "quota_null_remaining",
+    "token_retrieve_address_truncation",
+    "paybox_needs_pbx",
+    "x402_informational",
+    "telegram_stub",
+    "clawpump_oauth_stub",
+    "image_proxy_allowlist",
+    "swap_quote_occasional_429",
+    "community_profile_needs_userId"
+  ],
+  "fail": [
+    "agents_chat_free_quota_exceeded",
+    "launch_claw_upstream_404",
+    "pons_poll_upstream_405",
+    "pons_launches_upstream_404"
+  ]
+}

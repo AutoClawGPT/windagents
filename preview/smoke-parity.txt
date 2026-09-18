@@ -1,0 +1,24 @@
+=== SMOKE Sun Sep 13 23:18:02 UTC 2026 ===
+home:200
+launch_page:200
+tools_page:200
+skill_has_pons:8
+skill_no_ansemrail_url:1
+token_len=64
+upload:{"id":"f9200bc7ccce85407ef5f91a927f1606","url":"/api/upload/f9200bc7ccce85407ef5f91a927f1606","kind":"image","mime":"image/png","bytes":70}
+201
+
+pons_no_cpk:401
+{"error":"connect_your_own_key","service":"ClawPump","message":"No ClawPump credentials configured. Connect your own key in Settings.","hint":"PUT /api/settings { clawpumpApiKey: 'cpk_...' } — required for PONS / claw launches"}
+claw_no_cpk:401
+{"error":"connect_your_own_key","service":"ClawPump","message":"No ClawPump credentials configured. Connect your own key in Settings.","hint":"PUT /api/settings { clawpumpApiKey: 'cpk_...' } — required for PONS / claw launches"}
+{"error":"connect_your_own_key","service":"ClawPump","message":"No ClawPump credentials configured. Connect your own key in Settings.","hint":"PUT /api/settings { clawpumpApiKey: 'cpk_...' } — requi
+trending:200
+search:200
+retrieve:200
+{"code":"WIND-RM8U84","instructions":"Tweet the code WIND-RM8U84 + http://127.0.0.1:3000/home","profileUrl":"http://127.0.0.1:3000/home","note":"Localhost verify accepts a valid x.com/twitter status URL after start. Prod
+{"configured":false,"webhook":"/api/telegram","message":"Set TELEGRAM_BOT_TOKEN to enable WindAgents bot webhook"}
+{"authorizeUrl":null,"pkce":true,"message":"Official mcp.clawpump.tech is OAuth-only; WindAgents uses cpk_ via REST. Set CLAWPUMP_OAUTH_CLIENT_ID to enable.","hint":"Save a cpk_ key in Settings for RE
+proxy_bad:400
+{"error":"connect_your_own_key","service":"PayBox","message":"No PayBox credentials configured. Connect your own key in Settings.","hint":"PUT /api/settings { payboxApiKey: 'pbx_...' }"}
+DONE

@@ -1,0 +1,33 @@
+{
+  "pons": {
+    "status": 401,
+    "body": {
+      "error": "ClawPump launchPonsToken: 402 {\"error\":\"payment_required\",\"message\":\"Send 0.002 ETH on Robinhood Chain (chain 4663) from 0x000000000000000000000000000000000000dEaD to 0x3001012f02c9bbDe1A4Caf41040120eE6746F194, then retry with paymentTxHash.\",\"pay\":{\"chainId\":4663,\"from\":\"0x000000000000000000000000000000000000dEaD\",\"to\":\"0x3001012f02c9bbDe1A4Caf41040120eE6746F194\",\"amountWei\":\"2000000000000000\",\"amountEth\":\"0.002\"},\"idempotencyKey\":\"c9c7463e-489b-4846-89ff-98ce91c2ee44\",\"timestamp\":\"2026-09-13T23:15:59.227Z\",\"requestId\":\"784272a9-c002-4530-aa7a-634e865f59f7\"}"
+    }
+  },
+  "ponsGet": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "launches": []
+    }
+  },
+  "direct": {
+    "status": 422,
+    "body": {
+      "error": "Missing required fields",
+      "missing": [
+        "logoUrl"
+      ],
+      "required": {
+        "agentId": "Your ClawPump dashboard agent ID",
+        "symbol": "Token symbol (1-12 uppercase letters or digits)",
+        "description": "Token description",
+        "logoUrl": "Token logo URL (https or ipfs)",
+        "payoutWallet": "Robinhood Chain (EVM) address to receive the agent's fee earnings"
+      },
+      "timestamp": "2026-09-13T23:16:00.368Z",
+      "requestId": "71ca5675-0084-487b-b16d-227f55095f76"
+    }
+  }
+}
