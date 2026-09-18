@@ -10,6 +10,7 @@ import {
   SKILL_MD_APPEND_SPLIT_DESKS,
   SKILL_MD_APPEND_TOKENIZE_PARITY,
   SKILL_MD_APPEND_TWITTER_VERIFY,
+  SKILL_MD_APPEND_SHARE_CARD,
 } from "@/lib/skill-md-append";
 import { NextRequest } from "next/server";
 
@@ -41,7 +42,8 @@ export async function GET(req: NextRequest) {
     SKILL_MD_APPEND_AGENTS_DESK +
     SKILL_MD_APPEND_SPLIT_DESKS +
     SKILL_MD_APPEND_TOKENIZE_PARITY +
-    SKILL_MD_APPEND_TWITTER_VERIFY;
+    SKILL_MD_APPEND_TWITTER_VERIFY +
+    SKILL_MD_APPEND_SHARE_CARD;
 
   const body = withPublicBase(raw, base);
 
