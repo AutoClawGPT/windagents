@@ -92,7 +92,7 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Registration failed");
+      if (!res.ok) throw new Error(data.message || data.error || "Registration failed");
       saveAuth(data.authToken, { userId: data.userId, type: "human", email });
       setTokenOnce(data.authToken);
     } catch (err) {
@@ -128,7 +128,7 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Registration failed");
+      if (!res.ok) throw new Error(data.message || data.error || "Registration failed");
       saveAuth(data.agentToken, {
         userId: data.agentId,
         agentId: data.agentId,
