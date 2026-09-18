@@ -1,8 +1,9 @@
-import { db } from "@/db/client";
+import { db, ensureDb } from "@/db/client";
 import { sessions, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { hashToken, generateId, verifyAccessToken } from "./crypto";
 import type { User } from "@/db/schema";
+import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
 
 export async function getBearerUser(req: Request): Promise<User | null> {
   const header = req.headers.get("authorization") || req.headers.get("Authorization");
@@ -14,10 +15,32 @@ export async function getBearerUser(req: Request): Promise<User | null> {
   const claims = verifyAccessToken(token);
   if (claims) {
     try {
+      await ensureDb();
       const [row] = await db.select().from(users).where(eq(users.id, claims.sub)).limit(1);
-      if (row) return row;
-    } catch {
-      // DB may be ephemeral / cold — fall through to synthetic user
+      if (row) {
+        if (claims.typ === "agent") {
+          await ensurePublicAgentRow({ userId: row.id, name: row.displayName || claims.name || "Agent" });
+        }
+        return row;
+      }
+      // Heal vanished rows (common after /tmp SQLite on Vercel): recreate from wa1 claims
+      const now = new Date().toISOString();
+      await db.insert(users).values({
+        id: claims.sub,
+        type: claims.typ,
+        email: claims.email ?? null,
+        displayName: claims.name ?? null,
+        authTokenHash: hashToken(token),
+        createdAt: now,
+        updatedAt: now,
+      });
+      if (claims.typ === "agent") {
+        await ensurePublicAgentRow({ userId: claims.sub, name: claims.name || "Agent" });
+      }
+      const [healed] = await db.select().from(users).where(eq(users.id, claims.sub)).limit(1);
+      if (healed) return healed;
+    } catch (err) {
+      console.error("[auth] wa1 heal failed", err);
     }
     const now = new Date().toISOString();
     return {

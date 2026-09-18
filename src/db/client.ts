@@ -275,6 +275,38 @@ async function backfillPublicAgentProfilesSql() {
   if (n > 0) console.log(`[db] backfilled ${n} public agent profile(s)`);
 }
 
+
+
+const resolvedUrl = url;
+
+/** file:/tmp and :memory: are NOT shared across Vercel isolates — profiles vanish. */
+export function getDatabaseMode(): "libsql" | "file" | "memory" {
+  if (resolvedUrl === ":memory:" || resolvedUrl.startsWith(":memory:")) return "memory";
+  if (resolvedUrl.startsWith("file:")) return "file";
+  return "libsql";
+}
+
+export function isDurableDatabase(): boolean {
+  return getDatabaseMode() === "libsql";
+}
+
+/** On Vercel, refuse writes that would only live in /tmp. */
+export function assertDurableDatabase(): Response | null {
+  const onVercel = process.env.VERCEL === "1" || !!process.env.VERCEL_ENV;
+  if (!onVercel) return null;
+  if (isDurableDatabase()) return null;
+  return Response.json(
+    {
+      error: "ephemeral_database",
+      message:
+        "Production DATABASE_URL is still file/tmp SQLite. Agent/human rows will disappear across Vercel instances. Set DATABASE_URL=libsql://… and TURSO_AUTH_TOKEN in Vercel (claw-gpt/windagents), then redeploy. Free Turso DB is enough.",
+      mode: getDatabaseMode(),
+      need: ["DATABASE_URL (libsql://…)", "TURSO_AUTH_TOKEN"],
+    },
+    { status: 503 }
+  );
+}
+
 let bootstrapped = false;
 export async function ensureDb() {
   if (bootstrapped) return;

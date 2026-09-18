@@ -1,4 +1,4 @@
-import { db, ensureDb } from "@/db/client";
+import { db, ensureDb, assertDurableDatabase } from "@/db/client";
 import { users, registrations } from "@/db/schema";
 import { generateId, generateToken, hashToken, encryptApiKey, signAccessToken } from "@/lib/crypto";
 import { createSession } from "@/lib/auth";
@@ -7,6 +7,8 @@ import { eq } from "drizzle-orm";
 export async function POST(req: Request) {
   try {
     await ensureDb();
+    const ephemeral = assertDurableDatabase();
+    if (ephemeral) return ephemeral;
     const body = await req.json();
     const email = String(body.email || "").trim().toLowerCase();
     const walletAddress = body.walletAddress ? String(body.walletAddress).trim() : null;

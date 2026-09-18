@@ -1,4 +1,4 @@
-import { db, ensureDb } from "@/db/client";
+import { db, ensureDb, assertDurableDatabase } from "@/db/client";
 import { users, registrations, agentReputation } from "@/db/schema";
 import { generateId, generateToken, hashToken, signAccessToken } from "@/lib/crypto";
 import { createSession } from "@/lib/auth";
@@ -9,6 +9,8 @@ import { eq } from "drizzle-orm";
 export async function POST(req: Request) {
   try {
     await ensureDb();
+    const ephemeral = assertDurableDatabase();
+    if (ephemeral) return ephemeral;
     const body = await req.json();
     const ed25519PublicKey = String(body.ed25519PublicKey || "").trim();
     const ed25519Signature = String(body.ed25519Signature || "").trim();
