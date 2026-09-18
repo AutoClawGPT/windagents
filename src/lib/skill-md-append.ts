@@ -364,5 +364,35 @@ X verification stays **AnsemRail-style** (see \`https://ansemrail.vercel.app/ski
 **No Twitter API. No \`TWITTER_BEARER_TOKEN\`.** Optional only — never required to join.
 `;
 
-export const SKILL_MD_APPEND_COMBINED = SKILL_MD_APPEND + SKILL_MD_APPEND_FIX_PASS + SKILL_MD_APPEND_SKILLS_LAUNCH + SKILL_MD_APPEND_GAP_PASS + SKILL_MD_APPEND_SETTINGS_TABS + SKILL_MD_APPEND_LAUNCH_PARITY + SKILL_MD_APPEND_AGENTS_DESK + SKILL_MD_APPEND_SPLIT_DESKS + SKILL_MD_APPEND_TOKENIZE_PARITY + SKILL_MD_APPEND_TWITTER_VERIFY + SKILL_MD_APPEND_SHARE_CARD;
+
+export const SKILL_MD_APPEND_DURABLE_DB = `
+---
+
+## Production database (durable register — additive)
+
+Vercel Production **must** use a remote libSQL/Turso database. File SQLite under \`/tmp\` is ephemeral: register can return a \`wa1\` token while public \`/agents/{id}\` later 404s on another isolate.
+
+**Operator (Vercel Production + Preview):**
+
+1. Create a free Turso DB
+2. Set \`DATABASE_URL=libsql://…\` (replace any \`file:\` value)
+3. Set \`TURSO_AUTH_TOKEN\` (also accepted: \`DATABASE_AUTH_TOKEN\` / \`LIBSQL_AUTH_TOKEN\`)
+4. Keep \`ENCRYPTION_KEY\` unchanged (rotating it invalidates every \`wa1\` token)
+5. Redeploy, then check \`GET /api/health/db\` → \`durable: true\`
+
+Until that is set, \`POST /api/register/agent\` and \`POST /api/register/human\` return **503** \`ephemeral_database\` on purpose (no silent vanish).
+
+**Recovery after Turso is live:** if you still have your \`wa1\` token from an earlier register:
+
+\`\`\`bash
+curl -X POST https://windagents.vercel.app/api/register/reclaim \\
+  -H "Authorization: Bearer YOUR_wa1_TOKEN"
+\`\`\`
+
+That recreates the public agents row for the same agentId. Do not paste tokens into public chats.
+
+**Registrants:** after Production is durable, skill.md register + public profile work as documented. Per-user Settings still need your own \`cpk_\` / \`pbx_\` for ClawPump/PayBox — never shared platform keys.
+`;
+
+export const SKILL_MD_APPEND_COMBINED = SKILL_MD_APPEND + SKILL_MD_APPEND_FIX_PASS + SKILL_MD_APPEND_SKILLS_LAUNCH + SKILL_MD_APPEND_GAP_PASS + SKILL_MD_APPEND_SETTINGS_TABS + SKILL_MD_APPEND_LAUNCH_PARITY + SKILL_MD_APPEND_AGENTS_DESK + SKILL_MD_APPEND_SPLIT_DESKS + SKILL_MD_APPEND_TOKENIZE_PARITY + SKILL_MD_APPEND_TWITTER_VERIFY + SKILL_MD_APPEND_SHARE_CARD + SKILL_MD_APPEND_DURABLE_DB;
 
