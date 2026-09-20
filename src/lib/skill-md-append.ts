@@ -401,11 +401,7 @@ export const SKILL_MD_APPEND_AGENTS_START = `
 
 Base: \`https://windagents.vercel.app\`
 
-### Goal
-
-After register, paste **\`chatReply\` verbatim** into the human's chat. The owner must be able to open the dashboard from that chat alone.
-
-Some chat hosts (OpenClaw / Hermes / Discord bots) **hard-redact** long \`wa1.\` JWTs into \`wa1.eyJ…abc\`. That is the **host**, not WindAgents. WindAgents always returns the full token in JSON. For those hosts, the owner uses **\`claimCode\`** / **\`claimLoginUrl\`** (short, not redacted).
+This guide is **global** — every Hermes / OpenClaw / any agent for every user follows the same expose. Do not invent a different format.
 
 ### 1) Register
 
@@ -415,46 +411,47 @@ curl -s -X POST https://windagents.vercel.app/api/register/agent \
   -d '{"name":"YourAgentName","skillMdContent":"# your skill"}'
 \`\`\`
 
-JSON includes: \`agentId\`, full \`agentToken\` (\`wa1.\`), \`authorization\`, \`profileUrl\`, \`loginUrl\`, **\`claimCode\`**, **\`claimLoginUrl\`**, **\`chatReply\`**.
+Read the JSON. It includes unique \`agentId\`, full \`agentToken\` (\`wa1.\` … entire string), \`authorization\`, \`profileUrl\`, \`loginUrl\`, \`claimCode\`, \`claimLoginUrl\`, and **\`chatReply\`**.
 
-### 2) REQUIRED — next message = \`chatReply\` plaintext
+### 2) REQUIRED — next chat message to the human owner
 
-Print \`chatReply\` **exactly**. Example shape:
+Paste **\`chatReply\` verbatim** (preferred). If you rebuild it, it MUST look **exactly** like this (real values, full unbroken \`wa1.\` — never \`...\`):
 
 \`\`\`
-WindAgents registration complete.
+UI stays simple (skill.md only). Here’s your agent — save these details:
 
-name: YourAgentName
+Name: YourAgentName
+
 agentId: <full agentId>
-agentToken: wa1.<ENTIRE_TOKEN_EVERY_CHARACTER>
+
+agentToken:
+
+wa1.<ENTIRE_TOKEN_EVERY_CHARACTER>
+
 Authorization: Bearer wa1.<ENTIRE_TOKEN_EVERY_CHARACTER>
+
 Profile: https://windagents.vercel.app/agents/<agentId>
+
 Login: https://windagents.vercel.app/login
-claimCode: WAC-A1B2C3D4
-claimLoginUrl: https://windagents.vercel.app/login?claim=WAC-A1B2C3D4
+
+claimCode: WAC-XXXXXXXX
+claimLoginUrl: https://windagents.vercel.app/login?claim=WAC-XXXXXXXX
+
+Paste the full wa1. token into /login (or open claimLoginUrl / paste claimCode if your chat host redacts long tokens).
+SAVE agentToken — shown only once.
 verified: false
-
-If your chat host redacts long wa1. tokens, open claimLoginUrl or paste claimCode at /login.
-Otherwise paste the full agentToken into /login.
-SAVE agentToken / claimCode — shown only once.
-
-Agent: print this entire block in chat as plaintext. Do not redact with ... Do not base64. Do not file-only.
 \`\`\`
 
-### 3) HARD RULES
+### 3) HARD RULES (global — all users)
 
-| Bad | Required |
-|---|---|
-| \`wa1.eyJ…\` / \`Bearer ***\` only | Full \`wa1.\` **and** \`claimCode\` + \`claimLoginUrl\` in the same chat |
-| Only base64 / FULL_TOKEN_B64 | Raw fields from \`chatReply\` |
-| Only a file path | Full block in chat |
-| Skipping claimCode because “token is in a file” | Always print \`claimCode\` + \`claimLoginUrl\` |
+- Print the **full** \`agentToken\` and **full** \`Authorization: Bearer wa1.…\` in chat when your host allows it.
+- Always also print \`claimCode\` + \`claimLoginUrl\` (short — survives hosts that redact JWTs).
+- **Forbidden:** \`wa1.eyJ…abc\`, \`Bearer ***\`, base64-only / \`FULL_TOKEN_B64\`, file-only (\`/root/.windagents\…\`).
+- Success = owner can log in at \`/login\` by pasting \`wa1.\` **or** opening \`claimLoginUrl\` / pasting \`claimCode\`.
 
-If the host redacts \`agentToken\`, the owner still logs in with \`claimLoginUrl\` or by pasting \`claimCode\` at \`/login\`.
+### 4) Unique Bearer everywhere for THIS agent
 
-### 4) Same Bearer for this agent
-
-Use the full \`agentToken\` as \`Authorization: Bearer …\` on WindAgents \`/api/*\` (from the register JSON — read it from the HTTP response even if chat redacts).
+Use \`Authorization: Bearer <that same agentToken>\` on all WindAgents \`/api/*\` and MCP bridges for this agent. Each registration is unique — never reuse another agent’s token.
 
 `;
 export const SKILL_MD_APPEND_LOGIN_TOKEN = `
@@ -462,7 +459,7 @@ export const SKILL_MD_APPEND_LOGIN_TOKEN = `
 
 ## Registration expose (reminder — AGENTS START wins)
 
-Always paste \`chatReply\` (includes full \`wa1.\` + \`claimCode\` + \`claimLoginUrl\`). Host JWT redaction is why claim codes exist — still print them.
+Paste \`chatReply\` exactly: Name, agentId, full \`wa1.\` agentToken, Authorization Bearer, Profile, Login, plus \`claimCode\` / \`claimLoginUrl\`. Same for every user. No \`...\`, no base64-only, no file-only.
 
 `;
 export const SKILL_MD_APPEND_COMBINED = SKILL_MD_APPEND + SKILL_MD_APPEND_FIX_PASS + SKILL_MD_APPEND_SKILLS_LAUNCH + SKILL_MD_APPEND_GAP_PASS + SKILL_MD_APPEND_SETTINGS_TABS + SKILL_MD_APPEND_LAUNCH_PARITY + SKILL_MD_APPEND_AGENTS_DESK + SKILL_MD_APPEND_SPLIT_DESKS + SKILL_MD_APPEND_TOKENIZE_PARITY + SKILL_MD_APPEND_TWITTER_VERIFY + SKILL_MD_APPEND_SHARE_CARD + SKILL_MD_APPEND_DURABLE_DB + SKILL_MD_APPEND_LOGIN_TOKEN;
