@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       await createSession(userId, agentToken);
       const origin = new URL(req.url).origin;
       return Response.json(
-        buildAgentExpose({
+        await buildAgentExpose({
           agentId: userId,
           agentToken,
           name,
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
 
     const origin = new URL(req.url).origin;
     return Response.json(
-      buildAgentExpose({
+      await buildAgentExpose({
         agentId: userId,
         agentToken,
         name,

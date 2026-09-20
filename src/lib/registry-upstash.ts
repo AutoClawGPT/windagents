@@ -43,6 +43,7 @@ type RegistryBackend = {
   setJson(key: string, value: unknown): Promise<void>;
   getString(key: string): Promise<string | null>;
   setString(key: string, value: string): Promise<void>;
+  setStringEx(key: string, value: string, ttlSeconds: number): Promise<void>;
   sadd(key: string, member: string): Promise<void>;
   del(key: string): Promise<void>;
   srem(key: string, member: string): Promise<void>;
@@ -127,6 +128,10 @@ function makeIORedisBackend(r: IORedis): RegistryBackend {
       await ensureIORedisConnected(r);
       await r.set(key, value);
     },
+    async setStringEx(key: string, value: string, ttlSeconds: number): Promise<void> {
+      await ensureIORedisConnected(r);
+      await r.set(key, value, "EX", ttlSeconds);
+    },
     async sadd(key: string, member: string): Promise<void> {
       await ensureIORedisConnected(r);
       await r.sadd(key, member);
@@ -157,6 +162,9 @@ function makeUpstashBackend(r: UpstashRedis): RegistryBackend {
     },
     async setString(key: string, value: string): Promise<void> {
       await r.set(key, value);
+    },
+    async setStringEx(key: string, value: string, ttlSeconds: number): Promise<void> {
+      await r.set(key, value, { ex: ttlSeconds });
     },
     async sadd(key: string, member: string): Promise<void> {
       await r.sadd(key, member);
@@ -389,4 +397,29 @@ export async function registryIsDeleted(userId: string): Promise<boolean> {
   if (!r) return false;
   const v = await r.getString(deletedKey(userId));
   return !!(v && v.length > 0);
+}
+
+const claimKey = (code: string) => `wa:claim:${code.toUpperCase()}`;
+
+/** Short claim code for hosts that redact long wa1. JWTs in chat. TTL 30 days. */
+export async function registryPutClaim(agentToken: string): Promise<string | null> {
+  const r = getRegistryBackend();
+  if (!r) return null;
+  const { randomBytes } = await import("crypto");
+  for (let i = 0; i < 8; i++) {
+    const code = `WAC-${randomBytes(4).toString("hex").toUpperCase()}`;
+    const existing = await r.getString(claimKey(code));
+    if (existing) continue;
+    await r.setStringEx(claimKey(code), agentToken, 60 * 60 * 24 * 30);
+    return code;
+  }
+  return null;
+}
+
+export async function registryGetClaimToken(code: string): Promise<string | null> {
+  const r = getRegistryBackend();
+  if (!r) return null;
+  const cleaned = code.trim().toUpperCase().replace(/^CLAIM:/, "");
+  if (!cleaned) return null;
+  return r.getString(claimKey(cleaned));
 }

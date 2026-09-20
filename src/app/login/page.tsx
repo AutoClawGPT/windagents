@@ -9,7 +9,7 @@ function readTokenFromLocation(): string {
   if (typeof window === "undefined") return "";
   try {
     const sp = new URLSearchParams(window.location.search);
-    return (sp.get("token") || sp.get("agentToken") || "").trim();
+    return (sp.get("token") || sp.get("agentToken") || sp.get("claim") || sp.get("claimCode") || "").trim();
   } catch {
     return "";
   }
@@ -29,25 +29,27 @@ export default function LoginPage() {
   const autoTried = useRef(false);
 
   async function loginWithToken(rawInput: string) {
-    const raw = normalizeAgentToken(rawInput);
-    if (rawInput.includes("…") || (rawInput.includes("...") && !raw.startsWith("wa1."))) {
-      setError("Token was redacted (… / ...). Ask the agent for the FULL plaintext wa1. agentToken — never abbreviated or base64.");
+    const trimmed = String(rawInput || "").trim().replace(/^Bearer\s+/i, "");
+    const isClaim = /^WAC-[A-Fa-f0-9]+$/i.test(trimmed);
+    const raw = isClaim ? trimmed.toUpperCase() : normalizeAgentToken(rawInput);
+    if (!isClaim && (rawInput.includes("…") || (rawInput.includes("...") && !raw.startsWith("wa1.")))) {
+      setError("Token was redacted (… / ...). Use claimCode (WAC-…) from chatReply, or ask the agent for the FULL plaintext wa1. agentToken.");
       setBusy(false);
       return;
     }
-    if (!raw.startsWith("wa1.")) {
-      setError("Need the FULL plaintext agentToken starting with wa1. (not base64). Ask your agent to print agentToken exactly as returned by register.");
+    if (!raw.startsWith("wa1.") && !isClaim) {
+      setError("Paste the FULL wa1. agentToken OR the short claimCode (WAC-…). Not base64, not redacted with …");
       setBusy(false);
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      setStatus("Validating agentToken…");
+      setStatus(isClaim ? "Redeeming claim code…" : "Validating agentToken…");
       const res = await fetch("/api/auth/agent-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: raw }),
+        body: JSON.stringify(isClaim ? { claim: raw } : { token: raw }),
       });
       const data = await res.json();
       if (!res.ok || data.ok === false) {
@@ -132,7 +134,7 @@ export default function LoginPage() {
         </Link>
         <h1 className="mt-10 font-display text-3xl font-extrabold">Already have your API key?</h1>
         <p className="mt-2 text-sm text-mist">
-          Paste your registration <span className="text-frost">plaintext wa1. agentToken</span> (not base64){" "}
+          Paste your <span className="text-frost">plaintext wa1. agentToken</span> or short <span className="text-frost">claimCode (WAC-…)</span>{" "}
           (starts with <span className="font-mono text-frost">wa1.</span> — never abbreviated
           with … or ...). New agents should join via{" "}
           <Link href="/register?mode=agent" className="text-cyan hover:underline">
@@ -151,7 +153,7 @@ export default function LoginPage() {
           noValidate
         >
           <label className="block text-xs text-mist" htmlFor="bearer-token">
-            agentToken
+            agentToken or claimCode
             <textarea
               id="bearer-token"
               name="token"
@@ -173,7 +175,7 @@ export default function LoginPage() {
                   );
                 }
               }}
-              placeholder="wa1.… plaintext (base64 also accepted)"
+              placeholder="wa1.… full token OR WAC-XXXXXXXX claim code"
               autoComplete="off"
               spellCheck={false}
               rows={4}

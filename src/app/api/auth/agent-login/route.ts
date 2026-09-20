@@ -7,6 +7,7 @@ import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
 import { registryGetUser, registryPutUser, registryIsDeleted } from "@/lib/registry-upstash";
 import { eq } from "drizzle-orm";
 import { normalizeAgentToken } from "@/lib/normalize-agent-token";
+import { registryGetClaimToken } from "@/lib/registry-upstash";
 
 function cleanToken(raw: string): string {
   return normalizeAgentToken(raw);
@@ -73,8 +74,29 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
+    // Short claim code (WAC-XXXXXXXX) — survives chat hosts that redact long wa1. JWTs
+    const claimRaw = String(body.claim || body.claimCode || "").trim();
+    if (claimRaw && !body.agentToken && !body.authToken && !body.token) {
+      const claimed = await registryGetClaimToken(claimRaw);
+      if (!claimed) {
+        return Response.json(
+          { error: "Invalid or expired claim code", ok: false },
+          { status: 401 }
+        );
+      }
+      body.token = claimed;
+    }
+
     if (body.agentToken || body.authToken || body.token) {
-      const token = cleanToken(String(body.agentToken || body.authToken || body.token));
+      let token = cleanToken(String(body.agentToken || body.authToken || body.token));
+      // Also allow pasting a claim code into the token field
+      if (!token.startsWith("wa1.") && !token.startsWith("wa1.") && /^WAC-[A-F0-9]+$/i.test(token)) {
+        const claimed = await registryGetClaimToken(token);
+        if (!claimed) {
+          return Response.json({ error: "Invalid or expired claim code", ok: false }, { status: 401 });
+        }
+        token = cleanToken(claimed);
+      }
       if (!token) {
         return Response.json({ error: "token required", ok: false }, { status: 400 });
       }
