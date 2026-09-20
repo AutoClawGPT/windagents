@@ -2,7 +2,8 @@
  * Durable WindAgents registry — Redis Cloud (REDIS_URL / ioredis) primary,
  * Upstash REST optional fallback.
  * Stores WindAgents user/agent rows for skill.md join + public profiles.
- * Never stores ClawPump cpk_ / PayBox pbx_ here — those stay in Settings vault.
+ * Plaintext cpk_/pbx_ never stored. AES-GCM ciphertext vault blobs live at wa:vault:{userId}
+ * so Settings keys survive Vercel /tmp SQLite heals (still encrypted; ENCRYPTION_KEY required).
  *
  * Key schema: wa:user:, wa:agent:, wa:pubkey:, set wa:agents:public
  */
@@ -249,4 +250,26 @@ export async function registryEnsurePublicAgent(opts: {
   };
   await registryPutAgent(agent);
   return agent;
+}
+
+const vaultKey = (userId: string) => `wa:vault:${userId}`;
+
+/** Persist Settings encryptedKeys JSON (already AES-GCM). Not plaintext API keys. */
+export async function registryPutVault(userId: string, encryptedKeysJson: string | null): Promise<void> {
+  const r = getRegistryBackend();
+  if (!r) return;
+  if (!encryptedKeysJson) {
+    await r.setString(vaultKey(userId), "");
+    return;
+  }
+  await r.setString(vaultKey(userId), encryptedKeysJson);
+}
+
+/** Restore Settings vault ciphertext after ephemeral SQLite heal. */
+export async function registryGetVault(userId: string): Promise<string | null> {
+  const r = getRegistryBackend();
+  if (!r) return null;
+  const v = await r.getString(vaultKey(userId));
+  if (v == null || v === "") return null;
+  return v;
 }

@@ -4,6 +4,24 @@ import { eq } from "drizzle-orm";
 import { hashToken, generateId, verifyAccessToken } from "./crypto";
 import type { User } from "@/db/schema";
 import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
+import { registryGetVault } from "@/lib/registry-upstash";
+
+
+async function withRestoredVault(user: User): Promise<User> {
+  if (user.encryptedKeys) return user;
+  try {
+    const vault = await registryGetVault(user.id);
+    if (!vault) return user;
+    await db
+      .update(users)
+      .set({ encryptedKeys: vault, updatedAt: new Date().toISOString() })
+      .where(eq(users.id, user.id));
+    return { ...user, encryptedKeys: vault };
+  } catch (err) {
+    console.error("[auth] vault restore failed", err);
+    return user;
+  }
+}
 
 export async function getBearerUser(req: Request): Promise<User | null> {
   const header = req.headers.get("authorization") || req.headers.get("Authorization");
@@ -21,16 +39,18 @@ export async function getBearerUser(req: Request): Promise<User | null> {
         if (claims.typ === "agent") {
           await ensurePublicAgentRow({ userId: row.id, name: row.displayName || claims.name || "Agent" });
         }
-        return row;
+        return withRestoredVault(row);
       }
       // Heal vanished rows (common after /tmp SQLite on Vercel): recreate from wa1 claims
       const now = new Date().toISOString();
+      const vaultCipher = await registryGetVault(claims.sub);
       await db.insert(users).values({
         id: claims.sub,
         type: claims.typ,
         email: claims.email ?? null,
         displayName: claims.name ?? null,
         authTokenHash: hashToken(token),
+        encryptedKeys: vaultCipher,
         createdAt: now,
         updatedAt: now,
       });
@@ -43,6 +63,10 @@ export async function getBearerUser(req: Request): Promise<User | null> {
       console.error("[auth] wa1 heal failed", err);
     }
     const now = new Date().toISOString();
+    let vaultCipher: string | null = null;
+    try {
+      vaultCipher = await registryGetVault(claims.sub);
+    } catch {}
     return {
       id: claims.sub,
       type: claims.typ,
@@ -51,7 +75,7 @@ export async function getBearerUser(req: Request): Promise<User | null> {
       authTokenHash: hashToken(token),
       ed25519PublicKey: null,
       payoutWallet: null,
-      encryptedKeys: null,
+      encryptedKeys: vaultCipher,
       skillMdContent: null,
       displayName: claims.name ?? null,
       moonpayEmail: null,
@@ -71,7 +95,8 @@ export async function getBearerUser(req: Request): Promise<User | null> {
   if (session) {
     if (new Date(session.expires) < new Date()) return null;
     const [user] = await db.select().from(users).where(eq(users.id, session.userId)).limit(1);
-    return user ?? null;
+    if (!user) return null;
+    return withRestoredVault(user);
   }
 
   // Fallback: match hashed auth token on user
@@ -80,7 +105,8 @@ export async function getBearerUser(req: Request): Promise<User | null> {
     .from(users)
     .where(eq(users.authTokenHash, tokenHash))
     .limit(1);
-  return user ?? null;
+  if (!user) return null;
+  return withRestoredVault(user);
 }
 
 export async function requireUser(req: Request): Promise<User | Response> {

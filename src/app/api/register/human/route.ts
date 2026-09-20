@@ -3,6 +3,7 @@ import { users, registrations } from "@/db/schema";
 import { generateId, generateToken, hashToken, encryptApiKey, signAccessToken } from "@/lib/crypto";
 import { createSession } from "@/lib/auth";
 import { eq } from "drizzle-orm";
+import { registryPutVault } from "@/lib/registry-upstash";
 
 export async function POST(req: Request) {
   try {
@@ -51,6 +52,9 @@ export async function POST(req: Request) {
       payoutWallet: walletAddress,
       encryptedKeys: Object.keys(encryptedKeys).length ? JSON.stringify(encryptedKeys) : null,
     });
+
+    const vaultJson = Object.keys(encryptedKeys).length ? JSON.stringify(encryptedKeys) : null;
+    await registryPutVault(userId, vaultJson);
 
     await db.insert(registrations).values({
       id: generateId(),

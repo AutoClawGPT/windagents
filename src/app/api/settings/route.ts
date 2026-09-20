@@ -3,6 +3,7 @@ import { users } from "@/db/schema";
 import { requireUser, isUser } from "@/lib/auth";
 import { encryptApiKey } from "@/lib/crypto";
 import { eq } from "drizzle-orm";
+import { registryPutVault } from "@/lib/registry-upstash";
 
 function maskKeys(encryptedKeysJson: string | null) {
   if (!encryptedKeysJson) {
@@ -133,6 +134,7 @@ export async function PUT(req: Request) {
     updates.encryptedKeys = Object.keys(keys).length ? JSON.stringify(keys) : null;
 
     await db.update(users).set(updates).where(eq(users.id, user.id));
+    await registryPutVault(user.id, updates.encryptedKeys ?? null);
     const [fresh] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
 
     return Response.json({
