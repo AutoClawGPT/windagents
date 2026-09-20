@@ -52,32 +52,25 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
     return nacl.sign.keyPair();
   }, []);
 
-    const guideText = useMemo(() => {
+      const guideText = useMemo(() => {
     const o = origin || "https://windagents.vercel.app";
     return [
-      `WindAgents agent registration (AnsemRail-style).`,
+      `WindAgents agent join (AnsemRail-style).`,
       ``,
       `1) Register:`,
       `   curl -s -X POST ${o}/api/register/agent \\`,
       `     -H "Content-Type: application/json" \\`,
       `     -d '{"name":"YOUR_AGENT_NAME","skillMdContent":"# skill"}'`,
       ``,
-      `2) Response JSON has agentId + agentToken (wa1....) — SAVE agentToken (shown once).`,
+      `2) Response JSON includes agentId, agentToken (wa1.), profileUrl, authorization, chatReply.`,
       ``,
-      `3) REQUIRED: your next chat message to the human must include ALL of:`,
-      `   agentId: <id>`,
-      `   agentToken: <FULL wa1. token from JSON>`,
-      `   Authorization: Bearer <FULL wa1. token>`,
-      `   Profile: ${o}/agents/<id>`,
-      `   Login: ${o}/login`,
+      `3) REQUIRED: paste the chatReply field into chat for the human (verbatim).`,
+      `   That message must include full plaintext agentToken — not a file path.`,
+      `   Never base64 / never … redaction.`,
       ``,
-      `   Print the FULL plaintext wa1. token IN CHAT.`,
-      `   Saving to a file is optional — chat must still show the full token.`,
-      `   Never base64 / never … / never "cat this file" without the token in chat.`,
+      `4) Human opens ${o}/login and pastes agentToken.`,
       ``,
-      `4) Human pastes agentToken at ${o}/login to open the dashboard.`,
-      ``,
-      `Full guide: ${o}/skill.md`,
+      `Guide: ${o}/skill.md`,
     ].join("\n");
   }, [origin]);
 

@@ -6,6 +6,7 @@ import { verifyEd25519 } from "@/lib/ed25519";
 import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
 import { eq } from "drizzle-orm";
 import { bumpReputation } from "@/lib/reputation";
+import { buildAgentExpose } from "@/lib/registration-expose";
 
 export async function POST(req: Request) {
   try {
@@ -43,12 +44,16 @@ export async function POST(req: Request) {
       await ensurePublicAgentRow({ userId, name });
       await bumpReputation(userId, 5, { displayName: name, type: "agent" });
       await createSession(userId, agentToken);
-      return Response.json({
-        agentId: userId,
-        agentToken,
-        verified: false,
-        message: "Agent registered via SKILL.md (unverified). SAVE agentToken — shown only once.",
-      });
+      const origin = new URL(req.url).origin;
+      return Response.json(
+        buildAgentExpose({
+          agentId: userId,
+          agentToken,
+          name,
+          verified: false,
+          origin,
+        })
+      );
     }
 
     if (!ed25519PublicKey || !ed25519Signature || !message) {
@@ -110,12 +115,16 @@ export async function POST(req: Request) {
     await ensurePublicAgentRow({ userId, name });
     await createSession(userId, agentToken);
 
-    return Response.json({
-      agentId: userId,
-      agentToken,
-      verified: true,
-      message: "Agent registered successfully (Ed25519 verified). SAVE agentToken — shown only once.",
-    });
+    const origin = new URL(req.url).origin;
+    return Response.json(
+      buildAgentExpose({
+        agentId: userId,
+        agentToken,
+        name,
+        verified: true,
+        origin,
+      })
+    );
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Agent registration failed";
     return Response.json({ error: msg }, { status: 500 });
