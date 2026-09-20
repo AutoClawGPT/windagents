@@ -339,6 +339,8 @@ async function enrichPublicPayload(
       isOwner,
       clawpumpLinked,
       verified,
+      /** Public X handle when AnsemRail-style verify completed — never private keys. */
+      twitterHandle: verified && ver?.twitterHandle ? ver.twitterHandle : null,
     },
   };
 }

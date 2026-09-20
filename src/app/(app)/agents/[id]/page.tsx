@@ -48,7 +48,7 @@ type ProfileExtras = {
     createdAt: string;
   }[];
   stats?: { posts: number; followers: number; following: number };
-  flags?: { isOwner: boolean; clawpumpLinked: boolean; verified: boolean };
+  flags?: { isOwner: boolean; clawpumpLinked: boolean; verified: boolean; twitterHandle?: string | null };
 };
 
 export default function AgentProfilePage() {
@@ -92,7 +92,7 @@ export default function AgentProfilePage() {
       wallet: a.data.wallet,
       communityPosts: a.data.communityPosts || [],
       stats: a.data.stats,
-      flags: a.data.flags || { isOwner: false, clawpumpLinked: false, verified: false },
+      flags: a.data.flags || { isOwner: false, clawpumpLinked: false, verified: false, twitterHandle: null },
     });
     setError(null);
     setLoaded(true);
@@ -296,12 +296,20 @@ export default function AgentProfilePage() {
       data-is-owner={isOwner ? "1" : "0"}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-4 py-3 md:px-6">
-        <Link
-          href="/agents"
-          className="pointer-events-auto rounded-full border border-white/10 bg-void/60 px-3 py-1.5 text-xs text-mist backdrop-blur hover:border-cyan/40 hover:text-cyan"
-        >
-          ← Agents
-        </Link>
+        <div className="pointer-events-auto flex flex-wrap gap-2">
+          <Link
+            href="/leaderboard"
+            className="rounded-full border border-white/10 bg-void/60 px-3 py-1.5 text-xs text-mist backdrop-blur hover:border-cyan/40 hover:text-cyan"
+          >
+            ← Leaderboard
+          </Link>
+          <Link
+            href="/agents"
+            className="rounded-full border border-white/10 bg-void/60 px-3 py-1.5 text-xs text-mist backdrop-blur hover:border-cyan/40 hover:text-cyan"
+          >
+            Agents
+          </Link>
+        </div>
         <span className="pointer-events-none hidden font-mono text-[10px] uppercase tracking-widest text-cyan/70 sm:inline">
           Aeolian Forge · {isOwner ? "3D showcase" : "public preview"}
         </span>
@@ -423,20 +431,24 @@ export default function AgentProfilePage() {
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <span className="rounded-full border border-white/15 bg-void/50 px-2 py-0.5 font-mono text-[9px] uppercase text-mist">
-                agent
+                {extras.owner?.type || "agent"}
               </span>
-              {extras.flags?.verified && (
-                <span className="rounded-full border border-cyan/40 bg-cyan/10 px-2 py-0.5 font-mono text-[9px] uppercase text-cyan">
-                  verified
+              {extras.flags?.verified ? (
+                <span className="rounded-full border border-cyan/50 bg-cyan/15 px-2 py-0.5 font-mono text-[9px] uppercase text-cyan">
+                  X Verified
+                </span>
+              ) : (
+                <span className="rounded-full border border-white/10 bg-void/40 px-2 py-0.5 font-mono text-[9px] uppercase text-mist/70">
+                  X unverified
                 </span>
               )}
               {extras.flags?.clawpumpLinked || agent?.clawpumpAgentId ? (
-                <span className="rounded-full border border-cyan/40 bg-cyan/10 px-2 py-0.5 font-mono text-[9px] uppercase text-cyan">
-                  ClawPump connected
+                <span className="rounded-full border border-amber/40 bg-amber/10 px-2 py-0.5 font-mono text-[9px] uppercase text-amber">
+                  ClawPump Connected
                 </span>
               ) : (
-                <span className="rounded-full border border-amber/30 bg-amber/10 px-2 py-0.5 font-mono text-[9px] uppercase text-amber">
-                  local only
+                <span className="rounded-full border border-white/10 bg-void/40 px-2 py-0.5 font-mono text-[9px] uppercase text-mist/70">
+                  ClawPump off
                 </span>
               )}
               <span
@@ -446,9 +458,19 @@ export default function AgentProfilePage() {
                     : "border-white/15 bg-void/50 text-mist"
                 }`}
               >
-                {running ? "live" : agent?.status || "—"}
+                {running ? "Live" : agent?.status || "stopped"}
               </span>
             </div>
+            {extras.flags?.twitterHandle && (
+              <a
+                href={`https://x.com/${extras.flags.twitterHandle.replace(/^@/, "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1 font-mono text-[11px] text-cyan hover:underline"
+              >
+                @{extras.flags.twitterHandle.replace(/^@/, "")}
+              </a>
+            )}
             <dl className="mt-3 space-y-1.5 font-mono text-[10px] text-mist">
               <div className="flex justify-between gap-2">
                 <dt>id</dt>
@@ -459,9 +481,11 @@ export default function AgentProfilePage() {
                 <dd className="text-frost">{extras.owner?.type || "agent"}</dd>
               </div>
               <div className="flex justify-between gap-2">
-                <dt>registered</dt>
+                <dt>member since</dt>
                 <dd className="max-w-[60%] truncate text-frost">
-                  {(extras.owner?.createdAt || agent?.createdAt || "—").slice(0, 19)}
+                  {extras.owner?.createdAt || agent?.createdAt
+                    ? new Date(extras.owner?.createdAt || agent?.createdAt || "").toLocaleDateString()
+                    : "—"}
                 </dd>
               </div>
               <div className="flex justify-between gap-2">
@@ -514,16 +538,29 @@ export default function AgentProfilePage() {
 
           <div className="glass rounded-2xl p-4" data-panel="wallet">
             <p className="font-mono text-[10px] uppercase tracking-widest text-cyan">Payout wallet</p>
-            <p className="mt-2 break-all font-mono text-[11px] text-frost">{payout || "none set"}</p>
+            <p className="mt-2 break-all font-mono text-[11px] text-frost">
+              {payout || "Not set — owner adds this in Settings"}
+            </p>
             {payout && (
-              <a
-                href={`https://solscan.io/account/${payout}`}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-block text-[11px] text-cyan underline"
-              >
-                View on Solscan
-              </a>
+              <div className="mt-2 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="font-mono text-[11px] text-cyan underline"
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(payout);
+                  }}
+                >
+                  Copy
+                </button>
+                <a
+                  href={`https://solscan.io/account/${payout}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-[11px] text-cyan underline"
+                >
+                  Solscan
+                </a>
+              </div>
             )}
           </div>
 
