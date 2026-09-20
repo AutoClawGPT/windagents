@@ -13,7 +13,7 @@ import {
 } from "@/db/schema";
 import { generateId } from "@/lib/crypto";
 import { extractClawpumpKey, clawpumpFetch } from "@/lib/clawpump";
-import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
+import { ensurePublicAgentRow, publicAgentFromRegistry } from "@/lib/ensure-agent-profile";
 import { isRegistryConfigured, registryGetAgent, registryGetUser, registryIsDeleted } from "@/lib/registry-upstash";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -179,23 +179,34 @@ export async function resolveAgentForViewer(viewer: User | null, id: string) {
       .where(and(eq(users.id, key), eq(users.type, "agent")))
       .limit(1);
     if (agentUser) {
-      row = await ensurePublicAgentRow({
-        userId: agentUser.id,
-        name: agentUser.displayName || "Agent",
-      });
+      try {
+        row = await ensurePublicAgentRow({
+          userId: agentUser.id,
+          name: agentUser.displayName || "Agent",
+        });
+      } catch {
+        row = publicAgentFromRegistry({
+          userId: agentUser.id,
+          name: agentUser.displayName || "Agent",
+        });
+      }
     }
   }
 
-  // 4) Upstash durable registry (survives Vercel /tmp SQLite loss)
+  // 4) Upstash durable registry (survives Vercel /tmp SQLite loss).
+  // Serve from Redis first — never 500 if ephemeral SQLite mirror fails.
   if (!row && isRegistryConfigured()) {
     const remote = await registryGetAgent(key);
     if (remote && remote.isPublic) {
-      row = await ensurePublicAgentRow({
+      row = publicAgentFromRegistry(remote);
+      void ensurePublicAgentRow({
         userId: remote.userId,
         name: remote.name,
         persona: remote.persona ?? null,
         avatarGlbUrl: remote.avatarGlbUrl ?? null,
         avatarPrompt: remote.avatarPrompt ?? null,
+      }).catch(() => {
+        /* mirror best-effort */
       });
     }
   }

@@ -17,7 +17,7 @@ import {
   registryIsDeleted,
 } from "@/lib/registry-upstash";
 
-function syntheticAgentRow(opts: {
+export function syntheticAgentRow(opts: {
   userId: string;
   name: string;
   persona?: string | null;
@@ -44,6 +44,42 @@ function syntheticAgentRow(opts: {
     tokenMint: null,
     createdAt: opts.createdAt || now,
     updatedAt: opts.updatedAt || now,
+  };
+}
+
+
+/** Build a public agents row from durable registry — no SQLite required. */
+export function publicAgentFromRegistry(remote: {
+  userId: string;
+  name: string;
+  persona?: string | null;
+  avatarGlbUrl?: string | null;
+  avatarPrompt?: string | null;
+  model?: string | null;
+  status?: string;
+  skills?: string | null;
+  clawpumpAgentId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}): typeof agents.$inferSelect {
+  const now = new Date().toISOString();
+  return {
+    id: remote.userId,
+    userId: remote.userId,
+    clawpumpAgentId: remote.clawpumpAgentId ?? null,
+    name: remote.name || "Agent",
+    persona: remote.persona ?? null,
+    model: remote.model || "moonshotai/kimi-k2.5",
+    status: remote.status || "stopped",
+    walletAddress: null,
+    skills: remote.skills ?? null,
+    isPublic: true,
+    avatarUrl: null,
+    avatarGlbUrl: remote.avatarGlbUrl ?? null,
+    avatarPrompt: remote.avatarPrompt ?? null,
+    tokenMint: null,
+    createdAt: remote.createdAt || now,
+    updatedAt: remote.updatedAt || now,
   };
 }
 
