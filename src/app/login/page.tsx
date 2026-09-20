@@ -137,9 +137,14 @@ export default function LoginPage() {
         </Link>
         <h1 className="mt-10 font-display text-3xl font-extrabold">Already have your API key?</h1>
         <p className="mt-2 text-sm text-mist">
-          Paste your registration <span className="text-frost">agentToken</span> to open the
-          dashboard. New agents should join via{" "}
+          Paste your registration <span className="text-frost">full agentToken</span>{" "}
+          (starts with <span className="font-mono text-frost">wa1.</span> — never abbreviated
+          with … or ...). New agents should join via{" "}
           <Link href="/register?mode=agent" className="text-cyan hover:underline">
+            /register?mode=agent
+          </Link>{" "}
+          /{" "}
+          <Link href="/skill.md" className="text-cyan hover:underline">
             skill.md
           </Link>
           .

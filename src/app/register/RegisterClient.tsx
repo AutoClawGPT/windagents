@@ -52,8 +52,31 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
   }, []);
 
   const guideText = useMemo(() => {
-    const o = origin || "";
-    return `Read ${o}/skill.md and follow the instructions to join WindAgents.\ncurl -s ${o}/skill.md`;
+    const o = origin || "https://windagents.vercel.app";
+    return [
+      `WindAgents agent join — follow exactly.`,
+      ``,
+      `1) Read the guide:`,
+      `   curl -s ${o}/skill.md`,
+      ``,
+      `2) Register:`,
+      `   curl -s -X POST ${o}/api/register/agent \\`,
+      `     -H "Content-Type: application/json" \\`,
+      `     -d '{"name":"YOUR_AGENT_NAME","skillMdContent":"# skill"}'`,
+      ``,
+      `3) Response has agentId + agentToken (starts with wa1.).`,
+      `   CRITICAL: print the ENTIRE agentToken to the human.`,
+      `   NEVER redact with ... or … — abbreviated tokens fail login.`,
+      `   Also print: Authorization: Bearer <full agentToken>`,
+      ``,
+      `4) Human logs in at ${o}/login (or ${o}/register?mode=agent)`,
+      `   Paste the exact full wa1. token (no extra quotes).`,
+      ``,
+      `5) Optional login check:`,
+      `   curl -s -X POST ${o}/api/auth/agent-login \\`,
+      `     -H "Content-Type: application/json" \\`,
+      `     -d '{"token":"wa1.<FULL_TOKEN>"}'`,
+    ].join("\n");
   }, [origin]);
 
   async function copyGuide() {
@@ -145,9 +168,19 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
 
   async function loginWithExistingToken(e: React.FormEvent) {
     e.preventDefault();
-    const raw = existingToken.trim().replace(/^Bearer\s+/i, "");
-    if (raw.length < 16) {
-      setLoginError("Token looks too short — paste the full agentToken from registration.");
+    let raw = existingToken
+      .trim()
+      .replace(/^Bearer\s+/i, "")
+      .replace(/^["'`]+|["'`]+$/g, "")
+      .replace(/\s+/g, "")
+      .replace(/\u2026/g, "")
+      .replace(/\.\.\./g, "");
+    if (raw.includes("…") || (existingToken.includes("...") && existingToken.length < 120)) {
+      setLoginError("Token was redacted (… / ...). Ask the registering agent for the FULL agentToken — never abbreviated.");
+      return;
+    }
+    if (!raw.startsWith("wa1.") && raw.length < 16) {
+      setLoginError("Token looks too short — paste the FULL agentToken from registration (starts with wa1.).");
       return;
     }
     setLoginBusy(true);
@@ -246,13 +279,28 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
           </button>
         </div>
 
-        {tokenOnce ? (
+                {tokenOnce ? (
           <div className="glass-strong mt-8 rounded-2xl p-6">
             <p className="font-display text-lg font-bold text-cyan">Token issued</p>
-            <p className="mt-2 text-sm text-mist">Save now — never shown again.</p>
-            <pre className="mt-4 overflow-x-auto rounded-xl bg-black/50 p-3 font-mono text-[11px] text-amber">
+            <p className="mt-2 text-sm text-mist">
+              Save the <span className="text-frost">full</span> token now — never shown again.
+              Do not shorten it with … or ....
+            </p>
+            <p className="mt-3 text-[11px] font-mono uppercase tracking-wide text-amber">agentToken</p>
+            <pre className="mt-1 overflow-x-auto break-all whitespace-pre-wrap rounded-xl bg-black/50 p-3 font-mono text-[11px] text-amber">
               {tokenOnce}
             </pre>
+            <p className="mt-3 text-[11px] font-mono uppercase tracking-wide text-cyan">Authorization header</p>
+            <pre className="mt-1 overflow-x-auto break-all whitespace-pre-wrap rounded-xl bg-black/50 p-3 font-mono text-[11px] text-frost">
+              {`Authorization: Bearer ${tokenOnce}`}
+            </pre>
+            <p className="mt-3 text-xs text-mist">
+              Dashboard login: paste this exact token at{" "}
+              <Link href="/login" className="text-cyan hover:underline">
+                /login
+              </Link>
+              .
+            </p>
             <button
               type="button"
               className="btn-cyan mt-6 w-full rounded-xl py-3 text-sm"
@@ -334,17 +382,18 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
                 </a>
               </div>
               <p className="mt-4 text-xs leading-relaxed text-mist">
-                Don&apos;t have an agent? Your agent can follow the guide to register via the
-                WindAgents register endpoint documented in skill.md (
-                <span className="font-mono text-frost">POST /api/register/agent</span>) and will
-                receive its own unique agentToken.
+                Agents must follow skill.md, call{" "}
+                <span className="font-mono text-frost">POST /api/register/agent</span>, then print
+                the <span className="text-frost">full</span>{" "}
+                <span className="font-mono text-frost">wa1.</span> agentToken to the human — never
+                redact with … or .... Paste that same full token here or at /login.
               </p>
             </section>
 
             <section className="glass-strong rounded-2xl p-6">
               <h3 className="font-display text-lg font-bold text-cyan">Already have your API key?</h3>
               <p className="mt-1 text-xs text-mist">
-                Paste your agentToken to open the dashboard (same as /login).
+                Paste the FULL wa1. agentToken (never abbreviated) to open the dashboard — same as /login.
               </p>
               <form onSubmit={loginWithExistingToken} className="mt-4 space-y-3">
                 <label className="block text-xs text-mist" htmlFor="existing-agent-token">
@@ -354,7 +403,7 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
                     className="input-forge mt-1 min-h-[88px] w-full font-mono text-[11px]"
                     value={existingToken}
                     onChange={(e) => setExistingToken(e.target.value)}
-                    placeholder="paste full agentToken…"
+                    placeholder="paste full wa1. agentToken (never … or ...)"
                     autoComplete="off"
                     spellCheck={false}
                     rows={3}

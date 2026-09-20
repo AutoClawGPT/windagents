@@ -14,6 +14,7 @@ import {
   SKILL_MD_APPEND_DURABLE_DB,
   SKILL_MD_MCP_BRIDGE_NOTE,
   SKILL_MD_APPEND_LOGIN_TOKEN,
+  SKILL_MD_APPEND_AGENTS_START,
 } from "@/lib/skill-md-append";
 import { NextRequest } from "next/server";
 
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest) {
   const raw =
     SKILL_MD +
     "\n\n" +
+    SKILL_MD_APPEND_AGENTS_START +
     SKILL_MD_APPEND +
     SKILL_MD_APPEND_FIX_PASS +
     SKILL_MD_APPEND_SKILLS_LAUNCH +
