@@ -13,6 +13,7 @@ import {
   SKILL_MD_APPEND_SHARE_CARD,
   SKILL_MD_APPEND_DURABLE_DB,
   SKILL_MD_MCP_BRIDGE_NOTE,
+  SKILL_MD_APPEND_LOGIN_TOKEN,
 } from "@/lib/skill-md-append";
 import { NextRequest } from "next/server";
 
@@ -47,7 +48,8 @@ export async function GET(req: NextRequest) {
     SKILL_MD_APPEND_TWITTER_VERIFY +
     SKILL_MD_APPEND_SHARE_CARD +
     SKILL_MD_APPEND_DURABLE_DB +
-    SKILL_MD_MCP_BRIDGE_NOTE;
+    SKILL_MD_MCP_BRIDGE_NOTE +
+    SKILL_MD_APPEND_LOGIN_TOKEN;
 
   const body = withPublicBase(raw, base);
 

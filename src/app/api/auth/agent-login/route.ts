@@ -1,44 +1,126 @@
-import { db } from "@/db/client";
+import { db, ensureDb } from "@/db/client";
 import { users } from "@/db/schema";
-import { hashToken } from "@/lib/crypto";
+import { hashToken, verifyAccessToken } from "@/lib/crypto";
 import { createSession } from "@/lib/auth";
 import { verifyEd25519 } from "@/lib/ed25519";
+import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
+import { registryGetUser, registryPutUser } from "@/lib/registry-upstash";
 import { eq } from "drizzle-orm";
 
+function cleanToken(raw: string): string {
+  return String(raw || "")
+    .trim()
+    .replace(/^Bearer\s+/i, "")
+    .replace(/^["'`]+|["'`]+$/g, "")
+    .replace(/\s+/g, "");
+}
+
+async function resolveUserFromWa1(token: string) {
+  const claims = verifyAccessToken(token);
+  if (!claims) return null;
+
+  await ensureDb();
+  let [user] = await db.select().from(users).where(eq(users.id, claims.sub)).limit(1);
+
+  if (!user) {
+    // Heal after /tmp SQLite loss — recreate from wa1 claims (+ durable Redis registry if present)
+    const reg = await registryGetUser(claims.sub);
+    const now = new Date().toISOString();
+    const displayName = claims.name || reg?.displayName || "Agent";
+    await db.insert(users).values({
+      id: claims.sub,
+      type: claims.typ === "agent" ? "agent" : "human",
+      email: claims.email ?? reg?.email ?? null,
+      displayName,
+      authTokenHash: hashToken(token),
+      ed25519PublicKey: reg?.ed25519PublicKey ?? null,
+      createdAt: now,
+      updatedAt: now,
+    });
+    if (claims.typ === "agent") {
+      await ensurePublicAgentRow({ userId: claims.sub, name: displayName });
+    }
+    await registryPutUser({
+      id: claims.sub,
+      type: claims.typ === "agent" ? "agent" : "human",
+      displayName,
+      email: claims.email ?? null,
+      ed25519PublicKey: reg?.ed25519PublicKey ?? null,
+      authTokenHash: hashToken(token),
+      createdAt: reg?.createdAt || now,
+      updatedAt: now,
+    });
+    [user] = await db.select().from(users).where(eq(users.id, claims.sub)).limit(1);
+  } else if (!user.authTokenHash) {
+    await db
+      .update(users)
+      .set({ authTokenHash: hashToken(token), updatedAt: new Date().toISOString() })
+      .where(eq(users.id, user.id));
+  }
+
+  return user ?? null;
+}
+
 /**
- * AnsemRail-compatible agent login:
- * The registration agentToken / authToken IS the long-lived Bearer.
- * We validate it, optionally refresh a session row, and return the SAME token.
+ * Registration agentToken / authToken IS the long-lived Bearer (wa1.*).
+ * Accepts:
+ * 1) wa1.* HMAC tokens (works across Vercel isolates — preferred)
+ * 2) authTokenHash lookup (legacy / same-isolate)
+ * 3) Ed25519 challenge (does not re-issue token — paste original agentToken)
  */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
     if (body.agentToken || body.authToken || body.token) {
-      const token = String(body.agentToken || body.authToken || body.token)
-        .trim()
-        .replace(/^Bearer\s+/i, "");
+      const token = cleanToken(String(body.agentToken || body.authToken || body.token));
       if (!token) {
         return Response.json({ error: "token required", ok: false }, { status: 400 });
       }
-      const tokenHash = hashToken(token);
-      const [user] = await db.select().from(users).where(eq(users.authTokenHash, tokenHash)).limit(1);
+
+      // Prefer stateless wa1 verify — survives ephemeral SQLite
+      let user = token.startsWith("wa1.") ? await resolveUserFromWa1(token) : null;
+
       if (!user) {
-        return Response.json({ error: "Invalid token", ok: false }, { status: 401 });
+        await ensureDb();
+        const tokenHash = hashToken(token);
+        const [row] = await db
+          .select()
+          .from(users)
+          .where(eq(users.authTokenHash, tokenHash))
+          .limit(1);
+        user = row ?? null;
       }
 
-      // Keep a session row for tooling, but Bearer for clients is the registration token
+      if (!user) {
+        return Response.json(
+          {
+            error: "Invalid token",
+            ok: false,
+            message:
+              "Paste the FULL agentToken from registration (starts with wa1.). Do not redact with … or wrap in quotes.",
+          },
+          { status: 401 }
+        );
+      }
+
       try {
         await createSession(user.id, token);
       } catch {
-        // ignore duplicate/session errors — token auth still works via authTokenHash fallback
+        /* session optional */
+      }
+
+      if (user.type === "agent") {
+        await ensurePublicAgentRow({
+          userId: user.id,
+          name: user.displayName || "Agent",
+        });
       }
 
       return Response.json({
         ok: true,
         userId: user.id,
         type: user.type,
-        // CRITICAL: same token the user pasted — AnsemRail skill.md pattern
         authToken: token,
         agentToken: token,
         user: {
@@ -70,18 +152,16 @@ export async function POST(req: Request) {
     const valid = verifyEd25519({ publicKey, signature, message });
     if (!valid) return Response.json({ error: "Invalid signature", ok: false }, { status: 401 });
 
+    await ensureDb();
     const [user] = await db.select().from(users).where(eq(users.ed25519PublicKey, publicKey)).limit(1);
     if (!user) return Response.json({ error: "Agent not registered", ok: false }, { status: 404 });
-    if (!user.authTokenHash) {
-      return Response.json({ error: "No agent token on file — re-register", ok: false }, { status: 400 });
-    }
 
     return Response.json({
       ok: true,
       userId: user.id,
       type: user.type,
       message:
-        "Ed25519 verified. Paste your original agentToken from registration as Bearer (shown only once at register).",
+        "Ed25519 verified. Paste your original FULL agentToken from registration as Bearer (shown only once at register — never redact).",
       user: {
         id: user.id,
         email: user.email,

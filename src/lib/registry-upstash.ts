@@ -44,6 +44,7 @@ type RegistryBackend = {
   getString(key: string): Promise<string | null>;
   setString(key: string, value: string): Promise<void>;
   sadd(key: string, member: string): Promise<void>;
+  del(key: string): Promise<void>;
   srem(key: string, member: string): Promise<void>;
 };
 
@@ -130,6 +131,10 @@ function makeIORedisBackend(r: IORedis): RegistryBackend {
       await ensureIORedisConnected(r);
       await r.sadd(key, member);
     },
+    async del(key: string): Promise<void> {
+      await ensureIORedisConnected(r);
+      await r.del(key);
+    },
     async srem(key: string, member: string): Promise<void> {
       await ensureIORedisConnected(r);
       await r.srem(key, member);
@@ -155,6 +160,9 @@ function makeUpstashBackend(r: UpstashRedis): RegistryBackend {
     },
     async sadd(key: string, member: string): Promise<void> {
       await r.sadd(key, member);
+    },
+    async del(key: string): Promise<void> {
+      await r.del(key);
     },
     async srem(key: string, member: string): Promise<void> {
       await r.srem(key, member);
@@ -333,4 +341,34 @@ export async function registryUpsertReputationScore(
     await r.setJson("wa:reps:list", filtered.slice(0, 500));
   }
   return next;
+}
+
+
+export async function registryDeleteUser(userId: string): Promise<void> {
+  const r = getRegistryBackend();
+  if (!r) return;
+  const existing = await registryGetUser(userId);
+  await r.del(userKey(userId));
+  if (existing?.ed25519PublicKey) {
+    await r.del(pubkeyKey(existing.ed25519PublicKey));
+  }
+  await r.del(vaultKey(userId));
+  await r.del(repKey(userId));
+}
+
+export async function registryDeleteAgent(agentId: string): Promise<void> {
+  const r = getRegistryBackend();
+  if (!r) return;
+  await r.del(agentKey(agentId));
+  try {
+    await r.srem(PUBLIC_AGENTS, agentId);
+  } catch {
+    /* ignore */
+  }
+  const list = (await r.getJson<RegistryReputation[]>("wa:reps:list")) || [];
+  await r.setJson(
+    "wa:reps:list",
+    list.filter((x) => x.userId !== agentId)
+  );
+  await r.del(repKey(agentId));
 }

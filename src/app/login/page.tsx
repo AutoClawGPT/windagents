@@ -28,9 +28,20 @@ export default function LoginPage() {
   const autoTried = useRef(false);
 
   async function loginWithToken(rawInput: string) {
-    const raw = rawInput.trim().replace(/^Bearer\s+/i, "");
-    if (raw.length < 16) {
-      setError("Token looks too short — paste the full agentToken from registration.");
+    const raw = rawInput
+      .trim()
+      .replace(/^Bearer\s+/i, "")
+      .replace(/^["'`]+|["'`]+$/g, "")
+      .replace(/\s+/g, "")
+      .replace(/\u2026/g, "") // strip … if an agent redacted mid-token
+      .replace(/\.\.\./g, "");
+    if (raw.includes("…") || (raw.includes("...") && raw.length < 80)) {
+      setError("Token was redacted (… / ...). Ask the registering agent for the FULL agentToken — never abbreviated.");
+      setBusy(false);
+      return;
+    }
+    if (!raw.startsWith("wa1.") && raw.length < 16) {
+      setError("Token looks too short — paste the FULL agentToken from registration (starts with wa1.).");
       setBusy(false);
       return;
     }
@@ -55,6 +66,15 @@ export default function LoginPage() {
         displayName: data.user?.displayName,
         walletAddress: data.user?.walletAddress || undefined,
       });
+
+      // skill.md agents: userId === public agent profile id
+      const uid = String(data.userId || data.user?.id || "");
+      const utype = String(data.type || data.user?.type || "");
+      if (utype === "agent" && uid) {
+        setStatus("Opening agent profile…");
+        window.location.assign(`/agents/${uid}`);
+        return;
+      }
 
       setStatus("Loading agents…");
       const agentsRes = await fetch("/api/agents", {
@@ -144,7 +164,13 @@ export default function LoginPage() {
                 const pasted = e.clipboardData.getData("text");
                 if (pasted) {
                   e.preventDefault();
-                  setToken(pasted.trim());
+                  setToken(
+                    pasted
+                      .trim()
+                      .replace(/^Bearer\s+/i, "")
+                      .replace(/^["'`]+|["'`]+$/g, "")
+                      .replace(/\s+/g, "")
+                  );
                 }
               }}
               placeholder="paste full agentToken…"
