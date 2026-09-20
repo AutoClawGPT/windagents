@@ -1,15 +1,30 @@
 import { db } from "@/db/client";
-import { agentReputation, users } from "@/db/schema";
+import { agentReputation, users, agents } from "@/db/schema";
 import { requireUser, isUser } from "@/lib/auth";
 import { generateId } from "@/lib/crypto";
 import { primaryPublicAgentId } from "@/lib/ensure-agent-profile";
-import { eq, inArray } from "drizzle-orm";
-import { bumpReputation } from "@/lib/reputation";
+import { bumpReputation, listDurableLeaderboard } from "@/lib/reputation";
+import { eq } from "drizzle-orm";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const userId = url.searchParams.get("userId");
   if (userId) {
+    // Prefer durable Redis row; fall back to ephemeral SQLite mirror.
+    const durable = await listDurableLeaderboard();
+    const hit = durable.find((r) => r.userId === userId);
+    if (hit) {
+      return Response.json({
+        reputation: {
+          userId: hit.userId,
+          trustTier: hit.trustTier,
+          reputationScore: hit.reputationScore,
+          displayName: hit.displayName,
+          type: hit.type,
+          updatedAt: hit.updatedAt,
+        },
+      });
+    }
     const [rep] = await db
       .select()
       .from(agentReputation)
@@ -17,25 +32,31 @@ export async function GET(req: Request) {
       .limit(1);
     return Response.json({ reputation: rep || null });
   }
-  const all = await db.select().from(agentReputation);
-  all.sort((a, b) => b.reputationScore - a.reputationScore);
-  const userIds = all.map((r) => r.userId);
-  const us =
-    userIds.length > 0
-      ? await db.select().from(users).where(inArray(users.id, userIds))
-      : [];
-  const byId = Object.fromEntries(us.map((u) => [u.id, u]));
 
+  // Durable Upstash list — same source as /api/leaderboard (survives Vercel /tmp SQLite).
+  const all = await listDurableLeaderboard();
   const leaderboard = await Promise.all(
-    all.map(async (r) => {
-      const u = byId[r.userId];
-      const agentId =
-        u?.type === "agent" ? r.userId : (await primaryPublicAgentId(r.userId)) || r.userId;
+    all.map(async (r, i) => {
+      let agentId: string | null = null;
+      if (r.type === "agent") {
+        agentId = r.userId;
+        const [row] = await db.select().from(agents).where(eq(agents.id, r.userId)).limit(1);
+        if (!row) {
+          agentId = (await primaryPublicAgentId(r.userId)) || r.userId;
+        }
+      } else {
+        agentId = (await primaryPublicAgentId(r.userId)) || r.userId;
+      }
+      const [u] = await db.select().from(users).where(eq(users.id, r.userId)).limit(1);
       return {
-        ...r,
-        displayName: u?.displayName || u?.email || r.userId.slice(0, 8),
-        type: u?.type,
+        rank: i + 1,
+        userId: r.userId,
+        trustTier: r.trustTier,
+        reputationScore: r.reputationScore,
+        displayName: r.displayName || u?.displayName || u?.email || r.userId.slice(0, 8),
+        type: u?.type || r.type,
         agentId,
+        updatedAt: r.updatedAt,
       };
     })
   );
@@ -98,7 +119,10 @@ export async function POST(req: Request) {
         .from(agentReputation)
         .where(eq(agentReputation.id, existing.id))
         .limit(1);
-      await bumpReputation(user.id, trades * 2 + launches * 5, { displayName: user.displayName, type: user.type });
+      await bumpReputation(user.id, trades * 2 + launches * 5, {
+        displayName: user.displayName,
+        type: user.type,
+      });
       return Response.json({ reputation: rep });
     }
 
