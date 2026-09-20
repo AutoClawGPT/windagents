@@ -8,37 +8,51 @@ import { registryDeleteAgent, registryDeleteUser, registryTombstoneUser } from "
 type Ctx = { params: Promise<{ id: string }> };
 
 function serialize(agent: typeof agents.$inferSelect) {
+  let skills: unknown = [];
+  if (agent.skills) {
+    try {
+      skills = JSON.parse(agent.skills);
+    } catch {
+      skills = [];
+    }
+  }
   return {
     ...agent,
-    skills: agent.skills ? JSON.parse(agent.skills) : [],
+    skills,
   };
 }
 
 export async function GET(req: Request, ctx: Ctx) {
-  const viewer = await getBearerUser(req);
-  const { id } = await ctx.params;
-  const resolved = await resolveAgentForViewer(viewer, id);
-  if (!resolved.ok) {
-    return Response.json(
-      { error: resolved.error, message: "message" in resolved ? (resolved as { message?: string }).message : undefined, clawpump: (resolved as { clawpump?: unknown }).clawpump },
-      { status: resolved.status }
-    );
+  try {
+    const viewer = await getBearerUser(req);
+    const { id } = await ctx.params;
+    const resolved = await resolveAgentForViewer(viewer, id);
+    if (!resolved.ok) {
+      return Response.json(
+        { error: resolved.error, message: "message" in resolved ? (resolved as { message?: string }).message : undefined, clawpump: (resolved as { clawpump?: unknown }).clawpump },
+        { status: resolved.status }
+      );
+    }
+    const serialized = serialize(resolved.row);
+    return Response.json({
+      agent: serialized,
+      ...serialized,
+      canonicalId: resolved.canonicalId,
+      source: resolved.source,
+      importedFrom: "importedFrom" in resolved ? resolved.importedFrom : undefined,
+      owner: resolved.owner,
+      createdAt: resolved.createdAt,
+      reputation: resolved.reputation,
+      wallet: resolved.wallet,
+      communityPosts: resolved.communityPosts,
+      stats: resolved.stats,
+      flags: resolved.flags,
+    });
+  } catch (e: unknown) {
+    console.error("[agents/GET]", e);
+    const msg = e instanceof Error ? e.message : "Agent lookup failed";
+    return Response.json({ error: msg }, { status: 500 });
   }
-  const serialized = serialize(resolved.row);
-  return Response.json({
-    agent: serialized,
-    ...serialized,
-    canonicalId: resolved.canonicalId,
-    source: resolved.source,
-    importedFrom: "importedFrom" in resolved ? resolved.importedFrom : undefined,
-    owner: resolved.owner,
-    createdAt: resolved.createdAt,
-    reputation: resolved.reputation,
-    wallet: resolved.wallet,
-    communityPosts: resolved.communityPosts,
-    stats: resolved.stats,
-    flags: resolved.flags,
-  });
 }
 
 export async function PATCH(req: Request, ctx: Ctx) {

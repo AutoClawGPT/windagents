@@ -35,9 +35,9 @@ export async function GET(req: NextRequest) {
     "http://localhost:3000";
 
   const raw =
-    SKILL_MD +
-    "\n\n" +
     SKILL_MD_APPEND_AGENTS_START +
+    "\n\n" +
+    SKILL_MD +
     SKILL_MD_APPEND +
     SKILL_MD_APPEND_FIX_PASS +
     SKILL_MD_APPEND_SKILLS_LAUNCH +

@@ -52,31 +52,32 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
     return nacl.sign.keyPair();
   }, []);
 
-  const guideText = useMemo(() => {
+    const guideText = useMemo(() => {
     const o = origin || "https://windagents.vercel.app";
     return [
-      `WindAgents agent join — follow exactly.`,
+      `WindAgents agent registration (AnsemRail-style).`,
       ``,
-      `1) Read the guide:`,
-      `   curl -s ${o}/skill.md`,
-      ``,
-      `2) Register:`,
+      `1) Register:`,
       `   curl -s -X POST ${o}/api/register/agent \\`,
       `     -H "Content-Type: application/json" \\`,
       `     -d '{"name":"YOUR_AGENT_NAME","skillMdContent":"# skill"}'`,
       ``,
-      `3) Response has agentId + agentToken (starts with wa1.).`,
-      `   CRITICAL: print the ENTIRE agentToken to the human.`,
-      `   Print PLAINTEXT wa1. only — NEVER base64-encode, NEVER redact with ... or ….`,
-      `   Also print: Authorization: Bearer <full agentToken>`,
+      `2) Response JSON has agentId + agentToken (wa1....) — SAVE agentToken (shown once).`,
       ``,
-      `4) Human logs in at ${o}/login (or ${o}/register?mode=agent)`,
-      `   Paste the exact full wa1. token (no extra quotes).`,
+      `3) REQUIRED: your next chat message to the human must include ALL of:`,
+      `   agentId: <id>`,
+      `   agentToken: <FULL wa1. token from JSON>`,
+      `   Authorization: Bearer <FULL wa1. token>`,
+      `   Profile: ${o}/agents/<id>`,
+      `   Login: ${o}/login`,
       ``,
-      `5) Optional login check:`,
-      `   curl -s -X POST ${o}/api/auth/agent-login \\`,
-      `     -H "Content-Type: application/json" \\`,
-      `     -d '{"token":"wa1.<FULL_TOKEN>"}'`,
+      `   Print the FULL plaintext wa1. token IN CHAT.`,
+      `   Saving to a file is optional — chat must still show the full token.`,
+      `   Never base64 / never … / never "cat this file" without the token in chat.`,
+      ``,
+      `4) Human pastes agentToken at ${o}/login to open the dashboard.`,
+      ``,
+      `Full guide: ${o}/skill.md`,
     ].join("\n");
   }, [origin]);
 
