@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { saveAuth } from "@/lib/client-auth";
+import { normalizeAgentToken } from "@/lib/normalize-agent-token";
 import nacl from "tweetnacl";
 import bs58mod from "bs58";
 
@@ -66,7 +67,7 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
       ``,
       `3) Response has agentId + agentToken (starts with wa1.).`,
       `   CRITICAL: print the ENTIRE agentToken to the human.`,
-      `   NEVER redact with ... or … — abbreviated tokens fail login.`,
+      `   Print PLAINTEXT wa1. only — NEVER base64-encode, NEVER redact with ... or ….`,
       `   Also print: Authorization: Bearer <full agentToken>`,
       ``,
       `4) Human logs in at ${o}/login (or ${o}/register?mode=agent)`,
@@ -168,19 +169,9 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
 
   async function loginWithExistingToken(e: React.FormEvent) {
     e.preventDefault();
-    let raw = existingToken
-      .trim()
-      .replace(/^Bearer\s+/i, "")
-      .replace(/^["'`]+|["'`]+$/g, "")
-      .replace(/\s+/g, "")
-      .replace(/\u2026/g, "")
-      .replace(/\.\.\./g, "");
-    if (raw.includes("…") || (existingToken.includes("...") && existingToken.length < 120)) {
-      setLoginError("Token was redacted (… / ...). Ask the registering agent for the FULL agentToken — never abbreviated.");
-      return;
-    }
-    if (!raw.startsWith("wa1.") && raw.length < 16) {
-      setLoginError("Token looks too short — paste the FULL agentToken from registration (starts with wa1.).");
+    let raw = normalizeAgentToken(existingToken);
+    if (!raw.startsWith("wa1.")) {
+      setLoginError("Need FULL plaintext wa1. agentToken (not base64, not …). Ask the agent to print agentToken exactly.");
       return;
     }
     setLoginBusy(true);
@@ -403,7 +394,7 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
                     className="input-forge mt-1 min-h-[88px] w-full font-mono text-[11px]"
                     value={existingToken}
                     onChange={(e) => setExistingToken(e.target.value)}
-                    placeholder="paste full wa1. agentToken (never … or ...)"
+                    placeholder="wa1.… plaintext (base64 also accepted)"
                     autoComplete="off"
                     spellCheck={false}
                     rows={3}

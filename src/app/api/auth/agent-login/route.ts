@@ -6,13 +6,10 @@ import { verifyEd25519 } from "@/lib/ed25519";
 import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
 import { registryGetUser, registryPutUser, registryIsDeleted } from "@/lib/registry-upstash";
 import { eq } from "drizzle-orm";
+import { normalizeAgentToken } from "@/lib/normalize-agent-token";
 
 function cleanToken(raw: string): string {
-  return String(raw || "")
-    .trim()
-    .replace(/^Bearer\s+/i, "")
-    .replace(/^["'`]+|["'`]+$/g, "")
-    .replace(/\s+/g, "");
+  return normalizeAgentToken(raw);
 }
 
 async function resolveUserFromWa1(token: string) {
@@ -102,7 +99,7 @@ export async function POST(req: Request) {
             error: "Invalid token",
             ok: false,
             message:
-              "Paste the FULL agentToken from registration (starts with wa1.). Do not redact with … or wrap in quotes.",
+              "Paste the FULL plaintext agentToken (starts with wa1.). Not base64, not redacted with …, no extra quotes.",
           },
           { status: 401 }
         );

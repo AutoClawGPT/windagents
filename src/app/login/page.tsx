@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { saveAuth } from "@/lib/client-auth";
+import { normalizeAgentToken } from "@/lib/normalize-agent-token";
 
 function readTokenFromLocation(): string {
   if (typeof window === "undefined") return "";
@@ -28,20 +29,14 @@ export default function LoginPage() {
   const autoTried = useRef(false);
 
   async function loginWithToken(rawInput: string) {
-    const raw = rawInput
-      .trim()
-      .replace(/^Bearer\s+/i, "")
-      .replace(/^["'`]+|["'`]+$/g, "")
-      .replace(/\s+/g, "")
-      .replace(/\u2026/g, "") // strip … if an agent redacted mid-token
-      .replace(/\.\.\./g, "");
-    if (raw.includes("…") || (raw.includes("...") && raw.length < 80)) {
-      setError("Token was redacted (… / ...). Ask the registering agent for the FULL agentToken — never abbreviated.");
+    const raw = normalizeAgentToken(rawInput);
+    if (rawInput.includes("…") || (rawInput.includes("...") && !raw.startsWith("wa1."))) {
+      setError("Token was redacted (… / ...). Ask the agent for the FULL plaintext wa1. agentToken — never abbreviated or base64.");
       setBusy(false);
       return;
     }
-    if (!raw.startsWith("wa1.") && raw.length < 16) {
-      setError("Token looks too short — paste the FULL agentToken from registration (starts with wa1.).");
+    if (!raw.startsWith("wa1.")) {
+      setError("Need the FULL plaintext agentToken starting with wa1. (not base64). Ask your agent to print agentToken exactly as returned by register.");
       setBusy(false);
       return;
     }
@@ -137,7 +132,7 @@ export default function LoginPage() {
         </Link>
         <h1 className="mt-10 font-display text-3xl font-extrabold">Already have your API key?</h1>
         <p className="mt-2 text-sm text-mist">
-          Paste your registration <span className="text-frost">full agentToken</span>{" "}
+          Paste your registration <span className="text-frost">plaintext wa1. agentToken</span> (not base64){" "}
           (starts with <span className="font-mono text-frost">wa1.</span> — never abbreviated
           with … or ...). New agents should join via{" "}
           <Link href="/register?mode=agent" className="text-cyan hover:underline">
@@ -178,7 +173,7 @@ export default function LoginPage() {
                   );
                 }
               }}
-              placeholder="paste full agentToken…"
+              placeholder="wa1.… plaintext (base64 also accepted)"
               autoComplete="off"
               spellCheck={false}
               rows={4}
