@@ -28,6 +28,12 @@ export async function POST(req: Request) {
     return Response.json({ method, result });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "MCP proxy failed";
-    return Response.json({ error: msg }, { status: 502 });
+    return Response.json(
+      {
+        error: msg,
+        hint: "cpk_ uses WindAgents Partner REST→MCP bridge. Official mcp.clawpump.tech is OAuth-only; api.clawpump.tech is DNS-dead.",
+      },
+      { status: 502 }
+    );
   }
 }

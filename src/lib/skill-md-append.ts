@@ -396,3 +396,21 @@ curl -X POST https://windagents.vercel.app/api/register/reclaim \\
 
 export const SKILL_MD_APPEND_COMBINED = SKILL_MD_APPEND + SKILL_MD_APPEND_FIX_PASS + SKILL_MD_APPEND_SKILLS_LAUNCH + SKILL_MD_APPEND_GAP_PASS + SKILL_MD_APPEND_SETTINGS_TABS + SKILL_MD_APPEND_LAUNCH_PARITY + SKILL_MD_APPEND_AGENTS_DESK + SKILL_MD_APPEND_SPLIT_DESKS + SKILL_MD_APPEND_TOKENIZE_PARITY + SKILL_MD_APPEND_TWITTER_VERIFY + SKILL_MD_APPEND_SHARE_CARD + SKILL_MD_APPEND_DURABLE_DB;
 
+export const SKILL_MD_MCP_BRIDGE_NOTE = `
+---
+
+## ClawPump MCP (cpk_ REST bridge) — WindAgents
+
+Official \`mcp.clawpump.tech\` is **OAuth-only** and rejects \`cpk_\` (\`invalid_token\`).
+\`api.clawpump.tech\` is **DNS-dead** (NXDOMAIN) — do not use it.
+
+With your \`cpk_\` in Settings, \`POST /api/clawpump/mcp\` uses WindAgents' **Partner REST → MCP bridge**
+(\`tools/list\` / \`tools/call\` → \`https://clawpump.tech/api/v1\`). No mock tool results.
+
+\`\`\`bash
+curl -s -X POST https://windagents.vercel.app/api/clawpump/mcp \
+  -H "Authorization: Bearer YOUR_WA1_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"method":"tools/list","params":{},"id":1}'
+\`\`\`
+`;

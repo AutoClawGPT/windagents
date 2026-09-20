@@ -12,6 +12,7 @@ import {
   SKILL_MD_APPEND_TWITTER_VERIFY,
   SKILL_MD_APPEND_SHARE_CARD,
   SKILL_MD_APPEND_DURABLE_DB,
+  SKILL_MD_MCP_BRIDGE_NOTE,
 } from "@/lib/skill-md-append";
 import { NextRequest } from "next/server";
 
@@ -45,7 +46,8 @@ export async function GET(req: NextRequest) {
     SKILL_MD_APPEND_TOKENIZE_PARITY +
     SKILL_MD_APPEND_TWITTER_VERIFY +
     SKILL_MD_APPEND_SHARE_CARD +
-    SKILL_MD_APPEND_DURABLE_DB;
+    SKILL_MD_APPEND_DURABLE_DB +
+    SKILL_MD_MCP_BRIDGE_NOTE;
 
   const body = withPublicBase(raw, base);
 
