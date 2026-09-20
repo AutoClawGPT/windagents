@@ -4,7 +4,7 @@ export const AGENT3D_VERSION = "1.5.2";
 export const AGENT3D_SCRIPT_SRC = `https://three.ws/agent-3d/${AGENT3D_VERSION}/agent-3d.js`;
 /** Must match https://three.ws/agent-3d/versions.json channels["1.5.2"].integrity["agent-3d.js"] */
 export const AGENT3D_INTEGRITY =
-  "sha384-NiWBQHE5ZK3ntArSmiT54yIBzNRwfmua3PuKDKYD51xIC+UtCxIfsmVE1vT+8Gv+";
+  "sha384-hyuA7yBTgfOtg2kNC5qQFkUzcB6ac3RBpNjjgHOFWVXW4xjcvqAPVaY2ZgcYDB/G";
 export const DEFAULT_GLB = "https://three.ws/avatars/default.glb";
 
 const SCRIPT_ID = "three-ws-agent-3d-cdn";
