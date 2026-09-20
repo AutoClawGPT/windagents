@@ -3,7 +3,11 @@ import {
   isDurableDatabase,
   getDurableBackend,
 } from "@/db/client";
-import { isUpstashConfigured } from "@/lib/registry-upstash";
+import {
+  isRegistryConfigured,
+  isRedisUrlConfigured,
+  isUpstashConfigured,
+} from "@/lib/registry-upstash";
 
 /** Public registry durability probe — no secrets. */
 export async function GET() {
@@ -16,14 +20,18 @@ export async function GET() {
     mode,
     durable,
     backend,
+    redisUrl: isRedisUrlConfigured(),
     upstash: isUpstashConfigured(),
+    registry: isRegistryConfigured(),
     onVercel,
     message: durable
-      ? backend === "upstash"
-        ? "Upstash Redis registry — skill.md registrations persist across instances."
-        : "Remote libsql — registrations persist across instances."
+      ? backend === "redis"
+        ? "Redis Cloud (REDIS_URL) registry — skill.md registrations persist across instances."
+        : backend === "upstash"
+          ? "Upstash Redis registry — skill.md registrations persist across instances."
+          : "Remote libsql — registrations persist across instances."
       : onVercel
-        ? "No durable registry yet — set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN on Vercel (or libsql DATABASE_URL) or skill.md profiles will vanish."
+        ? "No durable registry yet — set REDIS_URL (Redis Cloud) on Vercel, or UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, or libsql DATABASE_URL — or skill.md profiles will vanish."
         : "Local file SQLite is fine for localhost.",
   });
 }

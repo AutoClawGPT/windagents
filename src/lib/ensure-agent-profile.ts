@@ -6,7 +6,7 @@ import { db } from "@/db/client";
 import { agents, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import {
-  isUpstashConfigured,
+  isRegistryConfigured,
   registryEnsurePublicAgent,
   registryPutUser,
 } from "@/lib/registry-upstash";
@@ -19,7 +19,7 @@ export async function ensurePublicAgentRow(opts: {
   const { userId, name, persona = null } = opts;
   const [existing] = await db.select().from(agents).where(eq(agents.id, userId)).limit(1);
   if (existing) {
-    if (isUpstashConfigured()) {
+    if (isRegistryConfigured()) {
       await registryEnsurePublicAgent({ userId, name: existing.name || name, persona });
     }
     return existing;
@@ -37,7 +37,7 @@ export async function ensurePublicAgentRow(opts: {
     updatedAt: now,
   });
   const [row] = await db.select().from(agents).where(eq(agents.id, userId)).limit(1);
-  if (isUpstashConfigured()) {
+  if (isRegistryConfigured()) {
     const now = new Date().toISOString();
     await registryPutUser({
       id: userId,

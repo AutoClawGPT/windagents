@@ -1,9 +1,13 @@
 /**
- * Durable WindAgents registry on Upstash Redis (platform infra only).
+ * Durable WindAgents registry — Redis Cloud (REDIS_URL / ioredis) primary,
+ * Upstash REST optional fallback.
  * Stores WindAgents user/agent rows for skill.md join + public profiles.
  * Never stores ClawPump cpk_ / PayBox pbx_ here — those stay in Settings vault.
+ *
+ * Key schema: wa:user:, wa:agent:, wa:pubkey:, set wa:agents:public
  */
-import { Redis } from "@upstash/redis";
+import { Redis as UpstashRedis } from "@upstash/redis";
+import IORedis from "ioredis";
 
 export type RegistryUser = {
   id: string;
@@ -33,7 +37,22 @@ export type RegistryAgent = {
   updatedAt: string;
 };
 
-let redis: Redis | null | undefined;
+type RegistryBackend = {
+  getJson<T>(key: string): Promise<T | null>;
+  setJson(key: string, value: unknown): Promise<void>;
+  getString(key: string): Promise<string | null>;
+  setString(key: string, value: string): Promise<void>;
+  sadd(key: string, member: string): Promise<void>;
+  srem(key: string, member: string): Promise<void>;
+};
+
+let ioRedis: IORedis | null | undefined;
+let upstashRedis: UpstashRedis | null | undefined;
+let backend: RegistryBackend | null | undefined;
+
+export function isRedisUrlConfigured(): boolean {
+  return !!process.env.REDIS_URL?.trim();
+}
 
 export function isUpstashConfigured(): boolean {
   return !!(
@@ -42,17 +61,121 @@ export function isUpstashConfigured(): boolean {
   );
 }
 
-export function getUpstashRedis(): Redis | null {
-  if (redis !== undefined) return redis;
-  if (!isUpstashConfigured()) {
-    redis = null;
+/** True when Redis Cloud (REDIS_URL) or Upstash REST pair is set. */
+export function isRegistryConfigured(): boolean {
+  return isRedisUrlConfigured() || isUpstashConfigured();
+}
+
+function getIORedis(): IORedis | null {
+  if (ioRedis !== undefined) return ioRedis;
+  const url = process.env.REDIS_URL?.trim();
+  if (!url) {
+    ioRedis = null;
     return null;
   }
-  redis = new Redis({
+  ioRedis = new IORedis(url, {
+    maxRetriesPerRequest: 1,
+    enableOfflineQueue: false,
+    lazyConnect: true,
+  });
+  return ioRedis;
+}
+
+function getUpstashRedis(): UpstashRedis | null {
+  if (upstashRedis !== undefined) return upstashRedis;
+  if (!isUpstashConfigured()) {
+    upstashRedis = null;
+    return null;
+  }
+  upstashRedis = new UpstashRedis({
     url: process.env.UPSTASH_REDIS_REST_URL!.trim(),
     token: process.env.UPSTASH_REDIS_REST_TOKEN!.trim(),
   });
-  return redis;
+  return upstashRedis;
+}
+
+async function ensureIORedisConnected(r: IORedis): Promise<void> {
+  // lazyConnect starts in "wait"; offline queue is off so we must connect first.
+  if (r.status === "wait" || r.status === "end" || r.status === "close") {
+    await r.connect();
+  }
+}
+
+function makeIORedisBackend(r: IORedis): RegistryBackend {
+  return {
+    async getJson<T>(key: string): Promise<T | null> {
+      await ensureIORedisConnected(r);
+      const raw = await r.get(key);
+      if (raw == null) return null;
+      try {
+        return JSON.parse(raw) as T;
+      } catch {
+        return raw as unknown as T;
+      }
+    },
+    async setJson(key: string, value: unknown): Promise<void> {
+      await ensureIORedisConnected(r);
+      await r.set(key, JSON.stringify(value));
+    },
+    async getString(key: string): Promise<string | null> {
+      await ensureIORedisConnected(r);
+      return (await r.get(key)) ?? null;
+    },
+    async setString(key: string, value: string): Promise<void> {
+      await ensureIORedisConnected(r);
+      await r.set(key, value);
+    },
+    async sadd(key: string, member: string): Promise<void> {
+      await ensureIORedisConnected(r);
+      await r.sadd(key, member);
+    },
+    async srem(key: string, member: string): Promise<void> {
+      await ensureIORedisConnected(r);
+      await r.srem(key, member);
+    },
+  };
+}
+
+function makeUpstashBackend(r: UpstashRedis): RegistryBackend {
+  return {
+    async getJson<T>(key: string): Promise<T | null> {
+      const row = await r.get<T>(key);
+      return row ?? null;
+    },
+    async setJson(key: string, value: unknown): Promise<void> {
+      await r.set(key, value);
+    },
+    async getString(key: string): Promise<string | null> {
+      const id = await r.get<string>(key);
+      return id ?? null;
+    },
+    async setString(key: string, value: string): Promise<void> {
+      await r.set(key, value);
+    },
+    async sadd(key: string, member: string): Promise<void> {
+      await r.sadd(key, member);
+    },
+    async srem(key: string, member: string): Promise<void> {
+      await r.srem(key, member);
+    },
+  };
+}
+
+/** Prefer Redis Cloud when REDIS_URL is set; else Upstash. Lazy singleton. */
+function getRegistryBackend(): RegistryBackend | null {
+  if (backend !== undefined) return backend;
+  const ior = getIORedis();
+  if (ior) {
+    backend = makeIORedisBackend(ior);
+    return backend;
+  }
+  const up = getUpstashRedis();
+  if (up) {
+    backend = makeUpstashBackend(up);
+    return backend;
+  }
+  backend = null;
+  return null;
 }
 
 const userKey = (id: string) => `wa:user:${id}`;
@@ -61,32 +184,30 @@ const pubkeyKey = (pk: string) => `wa:pubkey:${pk}`;
 const PUBLIC_AGENTS = "wa:agents:public";
 
 export async function registryPutUser(user: RegistryUser): Promise<void> {
-  const r = getUpstashRedis();
+  const r = getRegistryBackend();
   if (!r) return;
-  await r.set(userKey(user.id), user);
+  await r.setJson(userKey(user.id), user);
   if (user.ed25519PublicKey) {
-    await r.set(pubkeyKey(user.ed25519PublicKey), user.id);
+    await r.setString(pubkeyKey(user.ed25519PublicKey), user.id);
   }
 }
 
 export async function registryGetUser(id: string): Promise<RegistryUser | null> {
-  const r = getUpstashRedis();
+  const r = getRegistryBackend();
   if (!r) return null;
-  const row = await r.get<RegistryUser>(userKey(id));
-  return row ?? null;
+  return r.getJson<RegistryUser>(userKey(id));
 }
 
 export async function registryGetUserIdByPubkey(pk: string): Promise<string | null> {
-  const r = getUpstashRedis();
+  const r = getRegistryBackend();
   if (!r) return null;
-  const id = await r.get<string>(pubkeyKey(pk));
-  return id ?? null;
+  return r.getString(pubkeyKey(pk));
 }
 
 export async function registryPutAgent(agent: RegistryAgent): Promise<void> {
-  const r = getUpstashRedis();
+  const r = getRegistryBackend();
   if (!r) return;
-  await r.set(agentKey(agent.id), agent);
+  await r.setJson(agentKey(agent.id), agent);
   if (agent.isPublic) {
     await r.sadd(PUBLIC_AGENTS, agent.id);
   } else {
@@ -95,10 +216,9 @@ export async function registryPutAgent(agent: RegistryAgent): Promise<void> {
 }
 
 export async function registryGetAgent(id: string): Promise<RegistryAgent | null> {
-  const r = getUpstashRedis();
+  const r = getRegistryBackend();
   if (!r) return null;
-  const row = await r.get<RegistryAgent>(agentKey(id));
-  return row ?? null;
+  return r.getJson<RegistryAgent>(agentKey(id));
 }
 
 export async function registryEnsurePublicAgent(opts: {
