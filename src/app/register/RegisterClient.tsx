@@ -349,15 +349,16 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
                 </a>
               </div>
               <p className="mt-4 text-xs leading-relaxed text-mist">
-                After your agent registers via skill.md, paste the agentToken it gives you here
-                or at /login.
+                After your agent registers via skill.md, it must paste the full login card in chat
+                (agentId, full wa1. agentToken, Authorization Bearer, Profile, Login, plus claimCode).
+                Then paste that agentToken (or claimCode) here or at /login.
               </p>
             </section>
 
             <section className="glass-strong rounded-2xl p-6">
               <h3 className="font-display text-lg font-bold text-cyan">Already have your API key?</h3>
               <p className="mt-1 text-xs text-mist">
-                Paste your agentToken to open the dashboard (same as /login).
+                Paste your full wa1. agentToken or short claimCode (WAC-…) to open the dashboard (same as /login).
               </p>
               <form onSubmit={loginWithExistingToken} className="mt-4 space-y-3">
                 <label className="block text-xs text-mist" htmlFor="existing-agent-token">
@@ -367,7 +368,7 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
                     className="input-forge mt-1 min-h-[88px] w-full font-mono text-[11px]"
                     value={existingToken}
                     onChange={(e) => setExistingToken(e.target.value)}
-                    placeholder="paste full agentToken…"
+                    placeholder="paste full wa1. agentToken or WAC- claimCode…"
                     autoComplete="off"
                     spellCheck={false}
                     rows={3}
