@@ -9,6 +9,7 @@ import {
   isRegistryConfigured,
   registryEnsurePublicAgent,
   registryPutUser,
+  registryIsDeleted,
 } from "@/lib/registry-upstash";
 
 export async function ensurePublicAgentRow(opts: {
@@ -17,6 +18,9 @@ export async function ensurePublicAgentRow(opts: {
   persona?: string | null;
 }) {
   const { userId, name, persona = null } = opts;
+  if (await registryIsDeleted(userId)) {
+    return null as any;
+  }
   const [existing] = await db.select().from(agents).where(eq(agents.id, userId)).limit(1);
   if (existing) {
     if (isRegistryConfigured()) {

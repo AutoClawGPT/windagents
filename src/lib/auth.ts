@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { hashToken, generateId, verifyAccessToken } from "./crypto";
 import type { User } from "@/db/schema";
 import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
-import { registryGetVault } from "@/lib/registry-upstash";
+import { registryGetVault, registryIsDeleted } from "@/lib/registry-upstash";
 
 
 async function withRestoredVault(user: User): Promise<User> {
@@ -33,6 +33,9 @@ export async function getBearerUser(req: Request): Promise<User | null> {
   const claims = verifyAccessToken(token);
   if (claims) {
     try {
+      if (await registryIsDeleted(claims.sub)) {
+        return null;
+      }
       await ensureDb();
       const [row] = await db.select().from(users).where(eq(users.id, claims.sub)).limit(1);
       if (row) {

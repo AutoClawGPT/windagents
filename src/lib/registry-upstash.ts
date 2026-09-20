@@ -372,3 +372,21 @@ export async function registryDeleteAgent(agentId: string): Promise<void> {
   );
   await r.del(repKey(agentId));
 }
+
+const deletedKey = (userId: string) => `wa:deleted:${userId}`;
+
+/** Mark identity permanently removed — blocks wa1 heal / public revive. */
+export async function registryTombstoneUser(userId: string): Promise<void> {
+  const r = getRegistryBackend();
+  if (!r) return;
+  await r.setString(deletedKey(userId), new Date().toISOString());
+  await registryDeleteUser(userId);
+  await registryDeleteAgent(userId);
+}
+
+export async function registryIsDeleted(userId: string): Promise<boolean> {
+  const r = getRegistryBackend();
+  if (!r) return false;
+  const v = await r.getString(deletedKey(userId));
+  return !!(v && v.length > 0);
+}

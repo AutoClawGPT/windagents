@@ -3,7 +3,7 @@ import { agents, users } from "@/db/schema";
 import { requireUser, isUser, getBearerUser } from "@/lib/auth";
 import { resolveOwnedAgent, resolveAgentForViewer } from "@/lib/resolve-agent";
 import { eq } from "drizzle-orm";
-import { registryDeleteAgent, registryDeleteUser } from "@/lib/registry-upstash";
+import { registryDeleteAgent, registryDeleteUser, registryTombstoneUser } from "@/lib/registry-upstash";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -97,7 +97,9 @@ export async function DELETE(req: Request, ctx: Ctx) {
     await registryDeleteAgent(resolved.canonicalId);
     if (user.type === "agent" && (resolved.canonicalId === user.id || id === user.id)) {
       await db.delete(users).where(eq(users.id, user.id));
-      await registryDeleteUser(user.id);
+      await registryTombstoneUser(user.id);
+    } else {
+      await registryDeleteAgent(resolved.canonicalId);
     }
   } catch (err) {
     console.error("[agents/delete] registry purge failed", err);

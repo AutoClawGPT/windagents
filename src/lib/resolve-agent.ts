@@ -14,7 +14,7 @@ import {
 import { generateId } from "@/lib/crypto";
 import { extractClawpumpKey, clawpumpFetch } from "@/lib/clawpump";
 import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
-import { isRegistryConfigured, registryGetAgent } from "@/lib/registry-upstash";
+import { isRegistryConfigured, registryGetAgent, registryIsDeleted } from "@/lib/registry-upstash";
 import { eq, and, desc } from "drizzle-orm";
 
 export type ResolvedAgent = typeof agents.$inferSelect & { skillsParsed: string[] };
@@ -152,6 +152,15 @@ export async function resolveOwnedAgent(user: User, id: string) {
 export async function resolveAgentForViewer(viewer: User | null, id: string) {
   const key = String(id || "").trim();
   if (!key) return { ok: false as const, status: 400 as const, error: "id required" };
+
+  if (await registryIsDeleted(key)) {
+    return {
+      ok: false as const,
+      status: 404 as const,
+      error: "Agent not found",
+      message: "This agent was deleted.",
+    };
+  }
 
   // 1) Local agents row by primary id
   let [row] = await db.select().from(agents).where(eq(agents.id, key)).limit(1);

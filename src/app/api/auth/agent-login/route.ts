@@ -4,7 +4,7 @@ import { hashToken, verifyAccessToken } from "@/lib/crypto";
 import { createSession } from "@/lib/auth";
 import { verifyEd25519 } from "@/lib/ed25519";
 import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
-import { registryGetUser, registryPutUser } from "@/lib/registry-upstash";
+import { registryGetUser, registryPutUser, registryIsDeleted } from "@/lib/registry-upstash";
 import { eq } from "drizzle-orm";
 
 function cleanToken(raw: string): string {
@@ -18,6 +18,10 @@ function cleanToken(raw: string): string {
 async function resolveUserFromWa1(token: string) {
   const claims = verifyAccessToken(token);
   if (!claims) return null;
+
+  if (await registryIsDeleted(claims.sub)) {
+    return null;
+  }
 
   await ensureDb();
   let [user] = await db.select().from(users).where(eq(users.id, claims.sub)).limit(1);
