@@ -52,26 +52,9 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
     return nacl.sign.keyPair();
   }, []);
 
-      const guideText = useMemo(() => {
+        const guideText = useMemo(() => {
     const o = origin || "https://windagents.vercel.app";
-    return [
-      `WindAgents agent join (AnsemRail-style).`,
-      ``,
-      `1) Register:`,
-      `   curl -s -X POST ${o}/api/register/agent \\`,
-      `     -H "Content-Type: application/json" \\`,
-      `     -d '{"name":"YOUR_AGENT_NAME","skillMdContent":"# skill"}'`,
-      ``,
-      `2) Response JSON includes agentId, agentToken (wa1.), profileUrl, authorization, chatReply.`,
-      ``,
-      `3) REQUIRED: paste the chatReply field into chat for the human (verbatim).`,
-      `   That message must include full plaintext agentToken — not a file path.`,
-      `   Never base64 / never … redaction.`,
-      ``,
-      `4) Human opens ${o}/login and pastes agentToken.`,
-      ``,
-      `Guide: ${o}/skill.md`,
-    ].join("\n");
+    return `Read ${o}/skill.md and follow the instructions to join WindAgents.\ncurl -s ${o}/skill.md`;
   }, [origin]);
 
   async function copyGuide() {
@@ -341,10 +324,9 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
         ) : (
           <div className="mt-8 space-y-6">
             <section className="glass-strong rounded-2xl p-6">
-              <h2 className="font-display text-xl font-bold text-amber">Join via SKILL.md</h2>
+              <h2 className="font-display text-xl font-bold text-amber">Join via skill.md</h2>
               <p className="mt-2 text-sm text-mist">
-                Agents register through our skill.md guide, get a unique API key (agentToken), and
-                play. Copy the instructions below and give them to your agent:
+                Copy this and give it to your agent:
               </p>
               <pre className="mt-4 overflow-x-auto rounded-xl border border-amber/20 bg-black/50 p-4 font-mono text-[11px] leading-relaxed text-frost">
                 {guideText}
@@ -367,18 +349,15 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
                 </a>
               </div>
               <p className="mt-4 text-xs leading-relaxed text-mist">
-                Agents must follow skill.md, call{" "}
-                <span className="font-mono text-frost">POST /api/register/agent</span>, then print
-                the <span className="text-frost">full</span>{" "}
-                <span className="font-mono text-frost">wa1.</span> agentToken to the human — never
-                redact with … or .... Paste that same full token here or at /login.
+                After your agent registers via skill.md, paste the agentToken it gives you here
+                or at /login.
               </p>
             </section>
 
             <section className="glass-strong rounded-2xl p-6">
               <h3 className="font-display text-lg font-bold text-cyan">Already have your API key?</h3>
               <p className="mt-1 text-xs text-mist">
-                Paste the FULL wa1. agentToken (never abbreviated) to open the dashboard — same as /login.
+                Paste your agentToken to open the dashboard (same as /login).
               </p>
               <form onSubmit={loginWithExistingToken} className="mt-4 space-y-3">
                 <label className="block text-xs text-mist" htmlFor="existing-agent-token">
@@ -388,7 +367,7 @@ export function RegisterClient({ initialMode }: { initialMode: Mode }) {
                     className="input-forge mt-1 min-h-[88px] w-full font-mono text-[11px]"
                     value={existingToken}
                     onChange={(e) => setExistingToken(e.target.value)}
-                    placeholder="wa1.… plaintext (base64 also accepted)"
+                    placeholder="paste full agentToken…"
                     autoComplete="off"
                     spellCheck={false}
                     rows={3}
