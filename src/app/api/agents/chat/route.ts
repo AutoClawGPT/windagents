@@ -4,6 +4,7 @@ import { requireUser, isUser } from "@/lib/auth";
 import { generateId } from "@/lib/crypto";
 import { extractClawpumpKey, clawpumpFetch } from "@/lib/clawpump";
 import { resolveOwnedAgent } from "@/lib/resolve-agent";
+import { bumpReputation } from "@/lib/reputation";
 
 export async function POST(req: Request) {
   const user = await requireUser(req);
@@ -95,6 +96,9 @@ export async function POST(req: Request) {
       });
     }
 
+    if (reply) {
+      await bumpReputation(user.id, 1, { displayName: user.displayName, type: user.type });
+    }
     return Response.json({ agentId: localId, reply, clawpump: remote, canonicalId: localId });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Chat failed";

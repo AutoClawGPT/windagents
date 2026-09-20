@@ -1,10 +1,11 @@
 import { db, ensureDb, assertDurableDatabase } from "@/db/client";
-import { users, registrations, agentReputation } from "@/db/schema";
+import { users, registrations } from "@/db/schema";
 import { generateId, generateToken, hashToken, signAccessToken } from "@/lib/crypto";
 import { createSession } from "@/lib/auth";
 import { verifyEd25519 } from "@/lib/ed25519";
 import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
 import { eq } from "drizzle-orm";
+import { bumpReputation } from "@/lib/reputation";
 
 export async function POST(req: Request) {
   try {
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
       });
       // Public profile row — id === userId / agentId (one id everywhere)
       await ensurePublicAgentRow({ userId, name });
+      await bumpReputation(userId, 5, { displayName: name, type: "agent" });
       await createSession(userId, agentToken);
       return Response.json({
         agentId: userId,
@@ -103,12 +105,7 @@ export async function POST(req: Request) {
       skillMdContent,
       payload: JSON.stringify({ message, name }),
     });
-    await db.insert(agentReputation).values({
-      id: generateId(),
-      userId,
-      trustTier: "bronze",
-      reputationScore: 10,
-    });
+    await bumpReputation(userId, 10, { displayName: name, type: "agent" });
     // Public profile row — id === userId / agentId
     await ensurePublicAgentRow({ userId, name });
     await createSession(userId, agentToken);

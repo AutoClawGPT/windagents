@@ -4,6 +4,7 @@ import { requireUser, isUser } from "@/lib/auth";
 import { generateId } from "@/lib/crypto";
 import { primaryPublicAgentId } from "@/lib/ensure-agent-profile";
 import { eq, inArray } from "drizzle-orm";
+import { bumpReputation } from "@/lib/reputation";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -65,6 +66,7 @@ export async function POST(req: Request) {
         reputationScore: 1,
       });
       const [rep] = await db.select().from(agentReputation).where(eq(agentReputation.id, id)).limit(1);
+      await bumpReputation(user.id, 1, { displayName: user.displayName, type: user.type });
       return Response.json({ reputation: rep, message: "Registered in agent registry" });
     }
 
@@ -96,6 +98,7 @@ export async function POST(req: Request) {
         .from(agentReputation)
         .where(eq(agentReputation.id, existing.id))
         .limit(1);
+      await bumpReputation(user.id, trades * 2 + launches * 5, { displayName: user.displayName, type: user.type });
       return Response.json({ reputation: rep });
     }
 

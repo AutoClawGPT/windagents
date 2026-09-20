@@ -5,7 +5,7 @@
  * Plaintext cpk_/pbx_ never stored. AES-GCM ciphertext vault blobs live at wa:vault:{userId}
  * so Settings keys survive Vercel /tmp SQLite heals (still encrypted; ENCRYPTION_KEY required).
  *
- * Key schema: wa:user:, wa:agent:, wa:pubkey:, set wa:agents:public
+ * Key schema: wa:user:, wa:agent:, wa:pubkey:, wa:vault:, wa:rep:, wa:reps:list, set wa:agents:public
  */
 import { Redis as UpstashRedis } from "@upstash/redis";
 import IORedis from "ioredis";
@@ -272,4 +272,65 @@ export async function registryGetVault(userId: string): Promise<string | null> {
   const v = await r.getString(vaultKey(userId));
   if (v == null || v === "") return null;
   return v;
+}
+
+export type RegistryReputation = {
+  userId: string;
+  trustTier: string;
+  reputationScore: number;
+  displayName?: string | null;
+  type?: string | null;
+  updatedAt: string;
+};
+
+const repKey = (userId: string) => `wa:rep:${userId}`;
+const REP_INDEX = "wa:reps:index";
+
+export async function registryPutReputation(row: RegistryReputation): Promise<void> {
+  const r = getRegistryBackend();
+  if (!r) return;
+  await r.setJson(repKey(row.userId), row);
+  await r.sadd(REP_INDEX, row.userId);
+}
+
+export async function registryGetReputation(userId: string): Promise<RegistryReputation | null> {
+  const r = getRegistryBackend();
+  if (!r) return null;
+  return r.getJson<RegistryReputation>(repKey(userId));
+}
+
+export async function registryListReputations(): Promise<RegistryReputation[]> {
+  const r = getRegistryBackend();
+  if (!r) return [];
+  // Backend has no smembers — scan via known users is heavy; store JSON list mirror
+  const mirror = await r.getJson<RegistryReputation[]>("wa:reps:list");
+  return Array.isArray(mirror) ? mirror : [];
+}
+
+export async function registryUpsertReputationScore(
+  userId: string,
+  delta: number,
+  meta?: { trustTier?: string; displayName?: string | null; type?: string | null }
+): Promise<RegistryReputation> {
+  const now = new Date().toISOString();
+  const existing = await registryGetReputation(userId);
+  const next: RegistryReputation = {
+    userId,
+    trustTier: meta?.trustTier || existing?.trustTier || "bronze",
+    reputationScore: Math.max(0, (existing?.reputationScore || 0) + delta),
+    displayName: meta?.displayName ?? existing?.displayName ?? null,
+    type: meta?.type ?? existing?.type ?? null,
+    updatedAt: now,
+  };
+  await registryPutReputation(next);
+  // Maintain sorted mirror list (best-effort)
+  const r = getRegistryBackend();
+  if (r) {
+    const list = (await r.getJson<RegistryReputation[]>("wa:reps:list")) || [];
+    const filtered = list.filter((x) => x.userId !== userId);
+    filtered.push(next);
+    filtered.sort((a, b) => b.reputationScore - a.reputationScore);
+    await r.setJson("wa:reps:list", filtered.slice(0, 500));
+  }
+  return next;
 }

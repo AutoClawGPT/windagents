@@ -464,6 +464,18 @@ export function AgentsDeskPanel() {
               <code className="font-mono text-cyan">cpk_</code> (Partner proxy). ClawPump.tech tab
               stays available.
             </p>
+
+            {!selected?.clawpumpAgentId && (
+              <div className="mt-3 rounded-xl border border-amber/40 bg-amber/10 px-4 py-3 text-sm text-amber">
+                <strong>Local-only agent.</strong> Chat and Launch need a ClawPump link.
+                Save your <code className="font-mono">cpk_</code> in Settings, then create/sync an agent so
+                <code className="font-mono">clawpumpAgentId</code> is set — or re-create with cpk_ connected.{" "}
+                <a href="/settings" className="underline text-cyan">
+                  Open Settings
+                </a>
+              </div>
+            )}
+
             {selected?.clawpumpAgentId ? (
               <p className="mt-2 font-mono text-[10px] text-cyan">
                 Selected linked: {selected.clawpumpAgentId.slice(0, 18)}…
