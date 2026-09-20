@@ -14,7 +14,7 @@ import {
 import { generateId } from "@/lib/crypto";
 import { extractClawpumpKey, clawpumpFetch } from "@/lib/clawpump";
 import { ensurePublicAgentRow } from "@/lib/ensure-agent-profile";
-import { isRegistryConfigured, registryGetAgent, registryIsDeleted } from "@/lib/registry-upstash";
+import { isRegistryConfigured, registryGetAgent, registryGetUser, registryIsDeleted } from "@/lib/registry-upstash";
 import { eq, and, desc } from "drizzle-orm";
 
 export type ResolvedAgent = typeof agents.$inferSelect & { skillsParsed: string[] };
@@ -194,6 +194,8 @@ export async function resolveAgentForViewer(viewer: User | null, id: string) {
         userId: remote.userId,
         name: remote.name,
         persona: remote.persona ?? null,
+        avatarGlbUrl: remote.avatarGlbUrl ?? null,
+        avatarPrompt: remote.avatarPrompt ?? null,
       });
     }
   }
@@ -241,9 +243,29 @@ async function enrichPublicPayload(
   meta: { canonicalId: string; source: string; importedFrom?: string }
 ) {
   const ownerId = row.userId || row.id;
-  const [owner] = ownerId
+  let [owner] = ownerId
     ? await db.select().from(users).where(eq(users.id, ownerId)).limit(1)
     : [];
+  if (!owner && ownerId && isRegistryConfigured()) {
+    const ru = await registryGetUser(ownerId);
+    if (ru) {
+      owner = {
+        id: ru.id,
+        type: ru.type,
+        email: ru.email ?? null,
+        walletAddress: null,
+        authTokenHash: ru.authTokenHash ?? null,
+        ed25519PublicKey: ru.ed25519PublicKey ?? null,
+        payoutWallet: null,
+        encryptedKeys: null,
+        skillMdContent: ru.skillMdContent ?? null,
+        displayName: ru.displayName,
+        moonpayEmail: null,
+        createdAt: ru.createdAt,
+        updatedAt: ru.updatedAt,
+      } as typeof users.$inferSelect;
+    }
+  }
   const [rep] = ownerId
     ? await db.select().from(agentReputation).where(eq(agentReputation.userId, ownerId)).limit(1)
     : [];
