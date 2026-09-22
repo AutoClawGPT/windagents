@@ -1,1 +1,1 @@
-test
+@file:///workspace/windagents/src/lib/skill-md-append.ts
